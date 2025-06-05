@@ -1,0 +1,51 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# LeadGenie Project - AI Coding Assistant Rules
+
+## 🛡️ General
+- Use Python 3.11+
+- Use FastAPI for backend APIs
+- Ensure CORS is enabled for frontend calls
+- Never log sensitive data (emails, messages, scores)
+- All API responses must follow the defined schema
+
+## 🔐 Security Best Practices
+- Validate all incoming POST data with Pydantic models
+- Sanitize inputs (use regex to filter any embedded HTML/scripts)
+- Prevent prompt injection when calling GPT
+- Store environment variables using `.env` and never hardcode secrets
+
+## 🧠 AI Logic
+- Use a modular function to generate GPT prompts from lead data
+- Prompt must clearly request: score (0–100), category (hot/warm/cold), and reason
+- Retry logic if GPT fails
+- Log GPT responses for analytics (no PII)
+
+## 🗃️ Data Storage
+- Use SQLite for dev; support Supabase in prod
+- Save: name, email, company, message, category, score, created_at
+- Add simple schema migration if schema changes
+
+## 📬 Notifications
+- Add a module to optionally send email alerts (use SMTP, sendgrid, etc.)
+- Only alert on category="hot"
+
+## 🔧 Development
+- Setup `uvicorn` for local dev
+- Include `prestart.sh` for database init
+- Tests: `pytest` w/ fixtures for mocked GPT calls
+- Include `.replit` or `.devcontainer` config for reproducibility
+
+## 🖥️ Dashboard Frontend
+- Use API route `/leads` for GET/POST
+- Return only non-sensitive data on GET (no email/message)
+- Allow filtering via query params: `?category=hot&limit=10`
+
+## 📄 Endpoints Summary
+- `POST /leads` → submit new lead
+- `GET /leads` → list leads
+- `GET /leads/{id}` → details (auth protected)
+
