@@ -20,6 +20,20 @@ wheels/
 .installed.cfg
 *.egg
 
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm
+.yarn-integrity
+.next/
+out/
+build/
+dist/
+coverage/
+
 # Virtual Environment
 venv/
 env/
@@ -163,3 +177,6 @@ venv.bak/
 *.swp
 *.swo
 .DS_Store 
+
+# docs 
+docs/ 
