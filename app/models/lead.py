@@ -1,9 +1,10 @@
 from typing import Optional, List
-from sqlalchemy import Column, String, Integer, Enum, ForeignKey, JSON, Numeric, DateTime
+from sqlalchemy import Column, String, Integer, Enum, ForeignKey, JSON, Numeric, DateTime, Text
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 import uuid
 
-from app.models.base import Base
+from app.models.base import BaseModel
 
 
 class LeadCategory(str, Enum):
@@ -27,21 +28,21 @@ class TimelineEnum(str, Enum):
     BEYOND_90_DAYS = "beyond_90_days"
 
 
-class Lead(Base):
-    """
-    Lead model for storing and managing lead information.
-    """
+class Lead(BaseModel):
+    __tablename__ = "leads"
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String, nullable=False)
-    email = Column(String, nullable=False, index=True)
-    company = Column(String, nullable=False)
-    description = Column(String, nullable=True)
-    budget = Column(Numeric(10, 2), nullable=True)
-    timeline = Column(Enum(TimelineEnum), nullable=True)
-    
+    name = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False)
+    company = Column(String(255), nullable=True)
+    message = Column(Text, nullable=True)
+    category = Column(String(50), nullable=False)  # hot/warm/cold
+    score = Column(Integer, nullable=False)  # 0-100
+    reason = Column(Text, nullable=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+
     # AI Analysis Results
     ai_score = Column(Integer, nullable=True)
-    category = Column(Enum(LeadCategory), nullable=True)
     intent_analysis = Column(JSON, nullable=True)
     buying_signals = Column(JSON, nullable=True)  # List[str]
     risk_factors = Column(JSON, nullable=True)    # List[str]
@@ -51,6 +52,10 @@ class Lead(Base):
     assigned_to = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=True)
     status = Column(Enum(LeadStatus), nullable=False, default=LeadStatus.NEW)
     processed_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    creator = relationship("User", back_populates="leads")
+    notifications = relationship("Notification", back_populates="lead")
 
     def __repr__(self):
         return f"<Lead {self.name} - {self.company}>" 

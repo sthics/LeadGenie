@@ -1,16 +1,16 @@
 from datetime import datetime
 from typing import Any
-from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import Column, DateTime, func
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, DateTime
 
+Base = declarative_base()
 
-class Base(DeclarativeBase):
-    """
-    Base class for all models.
-    """
-    id: Any
-    __name__: str
+class BaseModel(Base):
+    __abstract__ = True
+
+    id = Column(Integer, primary_key=True, index=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Generate __tablename__ automatically
     @declared_attr
