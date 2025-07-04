@@ -2,7 +2,6 @@ from typing import List, Dict, Optional
 import json
 import asyncio
 import time
-from datetime import datetime
 import structlog
 from pydantic import BaseModel
 
