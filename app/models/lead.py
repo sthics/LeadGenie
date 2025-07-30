@@ -1,19 +1,21 @@
 from typing import Optional, List
-from sqlalchemy import Column, String, Integer, Enum, ForeignKey, JSON, Numeric, DateTime, Text
+from enum import Enum as PyEnum
+from sqlalchemy import Column, String, Integer, ForeignKey, JSON, Numeric, DateTime, Text
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 import uuid
+from sqlalchemy.orm import relationship
 
 from app.models.base import BaseModel
 
 
-class LeadCategory(str, Enum):
+class LeadCategory(str, PyEnum):
     HOT = "hot"
     WARM = "warm"
     COLD = "cold"
 
 
-class LeadStatus(str, Enum):
+class LeadStatus(str, PyEnum):
     NEW = "new"
     CONTACTED = "contacted"
     QUALIFIED = "qualified"
@@ -21,7 +23,7 @@ class LeadStatus(str, Enum):
     WON = "won"
 
 
-class TimelineEnum(str, Enum):
+class TimelineEnum(str, PyEnum):
     IMMEDIATE = "immediate"
     WITHIN_30_DAYS = "within_30_days"
     WITHIN_90_DAYS = "within_90_days"
@@ -50,7 +52,7 @@ class Lead(BaseModel):
     # Metadata
     source = Column(String, nullable=False, default="form")
     assigned_to = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=True)
-    status = Column(Enum(LeadStatus), nullable=False, default=LeadStatus.NEW)
+    status = Column(PgEnum(LeadStatus, name='lead_status_enum', create_type=False), nullable=False, default=LeadStatus.NEW)
     processed_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships

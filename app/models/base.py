@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Any
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, DateTime
+from sqlalchemy import Column, Integer, DateTime, func
+from sqlalchemy.ext.declarative import declared_attr
 
 Base = declarative_base()
 
