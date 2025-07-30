@@ -1,3 +1,11 @@
+import os
+import sys
+
+# Add the project root to the Python path
+sys.path.insert(0, os.path.realpath(os.path.join(os.path.dirname(__file__), '..')))
+
+
+
 import asyncio
 from logging.config import fileConfig
 from sqlalchemy import pool
@@ -9,6 +17,8 @@ from alembic import context
 from app.models.database import Base
 from app.core.database import DATABASE_URL
 
+from app.core.config import settings
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -18,8 +28,8 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set the database URL in the alembic.ini file
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+# Set the database URL from the centralized settings
+config.set_main_option("sqlalchemy.url", str(settings.SQLALCHEMY_DATABASE_URI))
 
 # add your model's MetaData object here
 # for 'autogenerate' support
