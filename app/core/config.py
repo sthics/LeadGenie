@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 from pydantic import AnyHttpUrl, validator, EmailStr
 import secrets
 from functools import lru_cache
-
+import os
 
 class Settings(BaseSettings):
     # API Settings
@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     REDIS_PASSWORD: Optional[str] = None
 
     # OpenAI Settings
-    OPENAI_API_KEY: str
+    OPENAI_API_KEY: Optional[str] = None
     OPENAI_MODEL: str = "gpt-4-turbo-preview"
     OPENAI_MAX_TOKENS: int = 2000
     OPENAI_TEMPERATURE: float = 0.7
@@ -63,7 +63,8 @@ class Settings(BaseSettings):
 
     class Config:
         case_sensitive = True
-        env_file = ".env"
+        env_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), '.env')
+        env_file_encoding = 'utf-8'
 
 
 @lru_cache()
@@ -71,4 +72,4 @@ def get_settings() -> Settings:
     return Settings()
 
 
-settings = get_settings() 
+settings = get_settings()

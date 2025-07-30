@@ -1,26 +1,24 @@
-from typing import Generator, Optional
+from typing import AsyncGenerator, Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from jose import jwt
 
 from app.core.config import settings
-from app.db.session import SessionLocal
+from app.core.database import async_session_factory as SessionLocal
 from app.models.user import User
 from app.services import auth as auth_service
 from app.schemas.auth import TokenPayload
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 
-def get_db() -> Generator:
-    try:
-        db = SessionLocal()
-        yield db
-    finally:
-        db.close()
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with SessionLocal() as session:
+        yield session
 
-def get_current_user(
-    db: Session = Depends(get_db),
+async def get_current_user(
+    db: AsyncSession = Depends(get_db),
     token: str = Depends(oauth2_scheme)) -> User:
     try:
         payload = jwt.decode(
@@ -33,7 +31,8 @@ def get_current_user(
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    user = db.query(User).filter(User.id == token_data.sub).first()
+    result = await db.execute(select(User).filter(User.id == token_data.sub))
+    user = result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if not user.is_active:
