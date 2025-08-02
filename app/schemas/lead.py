@@ -1,14 +1,13 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 class LeadBase(BaseModel):
     name: str
     email: EmailStr
-    company: str
+    company: Optional[str] = None
     message: str
-    category: str
-    score: int
 
 class LeadCreate(LeadBase):
     pass
@@ -22,9 +21,11 @@ class LeadUpdate(BaseModel):
     score: Optional[int] = None
 
 class LeadResponse(LeadBase):
-    id: int
+    id: UUID
+    category: Optional[str] = None
+    score: Optional[int] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 
     class Config:
-        from_attributes = True 
+        from_attributes = True
