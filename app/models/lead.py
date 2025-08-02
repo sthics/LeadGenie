@@ -19,6 +19,8 @@ class LeadStatus(str, PyEnum):
     NEW = "new"
     CONTACTED = "contacted"
     QUALIFIED = "qualified"
+    PROCESSING = "processing"
+    FAILED = "failed"
     LOST = "lost"
     WON = "won"
 
@@ -51,12 +53,13 @@ class Lead(BaseModel):
     
     # Metadata
     source = Column(String, nullable=False, default="form")
-    assigned_to = Column(UUID(as_uuid=True), ForeignKey("user.id"), nullable=True)
+    assigned_to = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     status = Column(PgEnum(LeadStatus, name='lead_status_enum', create_type=False), nullable=False, default=LeadStatus.NEW)
     processed_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
-    creator = relationship("User", back_populates="leads")
+    creator = relationship("User", foreign_keys=[created_by], back_populates="created_leads")
+    assignee = relationship("User", foreign_keys=[assigned_to], back_populates="assigned_leads")
     notifications = relationship("Notification", back_populates="lead")
 
     def __repr__(self):

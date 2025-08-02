@@ -29,7 +29,8 @@ class User(BaseModel):
     last_login = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
-    leads = relationship("Lead", back_populates="creator")
+    created_leads = relationship("Lead", foreign_keys="[Lead.created_by]", back_populates="creator")
+    assigned_leads = relationship("Lead", foreign_keys="[Lead.assigned_to]", back_populates="assignee")
     notifications = relationship("Notification", back_populates="user")
 
     def __repr__(self):

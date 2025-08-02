@@ -2,10 +2,10 @@ from sqlalchemy import Column, String, Integer, ForeignKey, Numeric, Boolean, Da
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 
-from app.models.base import Base
+from app.models.base import BaseModel
 
 
-class AIProcessingLog(Base):
+class AIProcessingLog(BaseModel):
     """
     Model for tracking AI service usage and performance.
     """
