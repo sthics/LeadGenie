@@ -2,7 +2,8 @@ from datetime import timedelta
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.core.config import settings
 from app.core.deps import get_db
@@ -13,14 +14,14 @@ from app.models.user import User
 router = APIRouter()
 
 @router.post("/login", response_model=Token)
-def login(
-    db: Session = Depends(get_db),
+async def login(
+    db: AsyncSession = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
 ) -> Any:
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    user = auth_service.authenticate_user(
+    user = await auth_service.authenticate_user(
         db, email=form_data.username, password=form_data.password
     )
     if not user:
@@ -47,16 +48,17 @@ def login(
     }
 
 @router.post("/register", response_model=UserResponse)
-def register(
+async def register(
     *,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     user_in: UserCreate,
 ) -> Any:
     """
     Register new user.
     """
-    user = db.query(User).filter(User.email == user_in.email).first()
-    if user:
+    result = await db.execute(select(User).filter(User.email == user_in.email))
+    existing_user = result.scalars().first()
+    if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="The user with this email already exists in the system.",
@@ -70,6 +72,6 @@ def register(
         is_superuser=False,
     )
     db.add(user)
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
     return user 

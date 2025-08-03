@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import structlog
 
 from app.core.database import get_db
-from app.services.ai_service import LeadQualificationAI
+from app.services.ai import LeadQualificationAI
 from app.models.lead import Lead, LeadStatus
 from app.schemas.lead import LeadCreate, LeadResponse
 
