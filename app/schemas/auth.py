@@ -9,7 +9,7 @@ class Token(BaseModel):
 
 class TokenPayload(BaseModel):
     sub: str  # user id
-    exp: datetime
+    exp: int  # timestamp
 
 class UserLogin(BaseModel):
     email: EmailStr

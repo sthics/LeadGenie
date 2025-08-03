@@ -51,9 +51,22 @@ def get_current_admin_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
     """Dependency to check if the current user is an admin"""
-    if not current_user.is_admin:
+    from app.models.user import UserRole
+    if current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="The user doesn't have admin privileges"
+        )
+    return current_user
+
+def get_current_manager_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Dependency to check if the current user is a manager or admin"""
+    from app.models.user import UserRole
+    if current_user.role not in [UserRole.ADMIN, UserRole.SALES_MANAGER]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The user doesn't have manager privileges"
         )
     return current_user 
