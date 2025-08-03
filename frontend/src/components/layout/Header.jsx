@@ -1,12 +1,18 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Menu, X, Sun, Moon, User } from 'lucide-react'
+import { Menu, X, Sun, Moon, User, LogOut } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
+import useAuthStore from '../../stores/auth'
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { theme, toggleTheme } = useTheme()
+  const { user, logout } = useAuthStore()
+
+  const handleLogout = () => {
+    logout()
+  }
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -35,14 +41,26 @@ const Header = () => {
               )}
             </button>
 
-            {/* Profile dropdown */}
-            <div className="relative">
+            {/* User menu and logout */}
+            <div className="flex items-center gap-x-2">
+              <span className="text-sm text-muted-foreground">
+                {user?.email || 'User'}
+              </span>
               <button
                 type="button"
                 className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-foreground"
               >
                 <span className="sr-only">Open user menu</span>
                 <User className="h-5 w-5" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex items-center gap-x-1 text-sm font-semibold leading-6 text-foreground hover:text-destructive transition-colors"
+                title="Logout"
+              >
+                <span className="sr-only">Logout</span>
+                <LogOut className="h-5 w-5" aria-hidden="true" />
               </button>
             </div>
           </div>

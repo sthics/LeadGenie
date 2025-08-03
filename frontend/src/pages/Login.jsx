@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import useAuthStore from '../stores/auth'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -15,7 +16,14 @@ const loginSchema = z.object({
 const Login = () => {
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const { login, isLoading, error, isAuthenticated } = useAuthStore()
+
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true })
+    }
+  }, [isAuthenticated, navigate])
 
   const {
     register,
@@ -30,16 +38,12 @@ const Login = () => {
   })
 
   const onSubmit = async (data) => {
-    setIsLoading(true)
     try {
-      // TODO: Implement actual authentication
-      console.log('Login data:', data)
+      await login(data)
       toast.success('Login successful!')
       navigate('/')
     } catch (error) {
-      toast.error('Invalid email or password')
-    } finally {
-      setIsLoading(false)
+      toast.error(error.response?.data?.detail || 'Invalid email or password')
     }
   }
 

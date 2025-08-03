@@ -2,9 +2,11 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { useEffect } from 'react'
 import { useTheme } from './hooks/useTheme'
+import useAuthStore from './stores/auth'
 
 // Layout Components
 import Layout from './components/layout/Layout'
+import ProtectedRoute from './components/auth/ProtectedRoute'
 
 // Pages
 import Dashboard from './pages/Dashboard'
@@ -13,8 +15,12 @@ import Login from './pages/Login'
 
 function App() {
   const { theme, setTheme } = useTheme()
+  const { initialize } = useAuthStore()
 
   useEffect(() => {
+    // Initialize authentication state
+    initialize()
+
     // Check system preference for dark mode
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
     setTheme(isDark ? 'dark' : 'light')
@@ -25,14 +31,18 @@ function App() {
     mediaQuery.addEventListener('change', handleChange)
 
     return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [setTheme])
+  }, [setTheme, initialize])
 
   return (
     <Router>
       <div className={theme}>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<Layout />}>
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }>
             <Route index element={<Dashboard />} />
             <Route path="submit" element={<LeadForm />} />
           </Route>

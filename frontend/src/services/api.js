@@ -36,9 +36,35 @@ api.interceptors.response.use(
 
 export const auth = {
   login: async (credentials) => {
-    const response = await api.post('/auth/login', credentials)
+    // Backend expects form data with username field, not email
+    const formData = new FormData()
+    formData.append('username', credentials.email)
+    formData.append('password', credentials.password)
+    
+    const response = await api.post('/api/v1/auth/login', formData, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    })
+    
+    // Backend returns access_token, frontend expects token
+    const data = response.data
+    const token = data.access_token
+    
+    // Store token for axios interceptor
+    localStorage.setItem('token', token)
+    
+    return {
+      token,
+      user: { email: credentials.email }, // We don't get user data from login response
+    }
+  },
+  
+  register: async (userData) => {
+    const response = await api.post('/api/v1/auth/register', userData)
     return response.data
   },
+  
   logout: () => {
     localStorage.removeItem('token')
   },
@@ -46,23 +72,27 @@ export const auth = {
 
 export const leads = {
   getAll: async (params) => {
-    const response = await api.get('/leads', { params })
+    const response = await api.get('/api/v1/leads', { params })
     return response.data
   },
   getById: async (id) => {
-    const response = await api.get(`/leads/${id}`)
+    const response = await api.get(`/api/v1/leads/${id}`)
     return response.data
   },
   create: async (data) => {
-    const response = await api.post('/leads', data)
+    const response = await api.post('/api/v1/leads', data)
+    return response.data
+  },
+  qualify: async (data) => {
+    const response = await api.post('/api/v1/leads/qualify', data)
     return response.data
   },
   update: async (id, data) => {
-    const response = await api.put(`/leads/${id}`, data)
+    const response = await api.put(`/api/v1/leads/${id}`, data)
     return response.data
   },
   delete: async (id) => {
-    const response = await api.delete(`/leads/${id}`)
+    const response = await api.delete(`/api/v1/leads/${id}`)
     return response.data
   },
 }
