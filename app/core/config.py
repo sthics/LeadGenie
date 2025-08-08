@@ -1,6 +1,6 @@
-from typing import Optional, List
+from typing import Optional, List, Any
 from pydantic_settings import BaseSettings
-from pydantic import AnyHttpUrl, validator, EmailStr
+from pydantic import AnyHttpUrl, field_validator, EmailStr, model_validator, Field
 import secrets
 from functools import lru_cache
 import os
@@ -14,15 +14,13 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
     # CORS Settings
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    backend_cors_origins_str: str = Field(default="", validation_alias="BACKEND_CORS_ORIGINS")
 
-    @validator("BACKEND_CORS_ORIGINS", pre=True)
-    def assemble_cors_origins(cls, v: str | List[str]) -> List[str] | str:
-        if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
-            return v
-        raise ValueError(v)
+    @property
+    def BACKEND_CORS_ORIGINS(self) -> List[str]:
+        if not self.backend_cors_origins_str:
+            return []
+        return [origin.strip() for origin in self.backend_cors_origins_str.split(",")]
 
     # Database Settings
     POSTGRES_SERVER: str
@@ -31,11 +29,11 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     SQLALCHEMY_DATABASE_URI: Optional[str] = None
 
-    @validator("SQLALCHEMY_DATABASE_URI", pre=True)
-    def assemble_db_connection(cls, v: Optional[str], values: dict[str, any]) -> any:
-        if isinstance(v, str):
-            return v
-        return f"postgresql+asyncpg://{values.get('POSTGRES_USER')}:{values.get('POSTGRES_PASSWORD')}@{values.get('POSTGRES_SERVER')}/{values.get('POSTGRES_DB')}"
+    @model_validator(mode="after")
+    def assemble_db_connection(self) -> 'Settings':
+        if self.SQLALCHEMY_DATABASE_URI is None:
+            self.SQLALCHEMY_DATABASE_URI = f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}/{self.POSTGRES_DB}"
+        return self
 
     # Redis Settings
     REDIS_HOST: str
@@ -62,10 +60,12 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
 
-    class Config:
-        case_sensitive = True
-        env_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), '.env')
-        env_file_encoding = 'utf-8'
+    model_config = {
+        'case_sensitive': True,
+        'env_file': os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), '.env'),
+        'env_file_encoding': 'utf-8',
+        'env_parse_none_str': 'None'
+    }
 
 
 @lru_cache()

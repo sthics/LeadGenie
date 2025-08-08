@@ -10,7 +10,7 @@ class AIProcessingLog(BaseModel):
     Model for tracking AI service usage and performance.
     """
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    lead_id = Column(UUID(as_uuid=True), ForeignKey("lead.id"), nullable=False)
+    lead_id = Column(UUID(as_uuid=True), ForeignKey("leads.id"), nullable=False)
     model_used = Column(String, nullable=False)
     tokens_used = Column(Integer, nullable=False)
     processing_time = Column(Numeric(10, 3), nullable=False)  # in seconds
