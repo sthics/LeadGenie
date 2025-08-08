@@ -1,5 +1,4 @@
 import { Link, useLocation } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { LayoutDashboard, Send, BarChart2, Settings } from 'lucide-react'
 
 const navigation = [
@@ -32,9 +31,9 @@ const Sidebar = () => {
           </Link>
         </div>
         <nav className="flex flex-1 flex-col">
-          <ul role="list" className="flex flex-1 flex-col gap-y-7">
+          <ul className="flex flex-1 flex-col gap-y-7">
             <li>
-              <ul role="list" className="-mx-2 space-y-1">
+              <ul className="-mx-2 space-y-1">
                 {navigation.map((item) => {
                   const isActive = location.pathname === item.href
                   return (
