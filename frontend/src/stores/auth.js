@@ -24,6 +24,31 @@ const useAuthStore = create(
 
       login: async (credentials) => {
         set({ isLoading: true, error: null })
+        
+        // Demo mode - bypass authentication for demo credentials
+        if (credentials.email === 'demo@leadgenie.com' && credentials.password === 'demo123') {
+          const demoUser = {
+            id: 'demo-user-id',
+            email: 'demo@leadgenie.com',
+            full_name: 'Demo User',
+            role: 'admin'
+          }
+          const demoToken = 'demo-token-' + Date.now()
+          
+          // Store in localStorage for persistence
+          localStorage.setItem('token', demoToken)
+          
+          set({ 
+            user: demoUser, 
+            token: demoToken, 
+            isAuthenticated: true, 
+            isLoading: false 
+          })
+          
+          return { user: demoUser, token: demoToken }
+        }
+        
+        // Regular authentication flow
         try {
           const { token, user } = await auth.login(credentials)
           set({ user, token, isAuthenticated: true, isLoading: false })
@@ -55,6 +80,8 @@ const useAuthStore = create(
       logout: () => {
         auth.logout()
         set({ user: null, token: null, isAuthenticated: false })
+        // Redirect to landing page after logout
+        window.location.href = '/'
       },
 
       clearError: () => set({ error: null }),

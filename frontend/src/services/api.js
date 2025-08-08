@@ -71,8 +71,12 @@ export const auth = {
 }
 
 export const leads = {
-  getAll: async (params) => {
+  getAll: async (params = {}) => {
     const response = await api.get('/api/v1/leads', { params })
+    return response.data
+  },
+  getStats: async () => {
+    const response = await api.get('/api/v1/leads/stats')
     return response.data
   },
   getById: async (id) => {
