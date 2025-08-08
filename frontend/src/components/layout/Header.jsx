@@ -76,7 +76,7 @@ const Header = () => {
       >
         <div className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-background px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
           <div className="flex items-center justify-between">
-            <Link to="/" className="-m-1.5 p-1.5">
+            <Link to="/dashboard" className="-m-1.5 p-1.5">
               <span className="sr-only">LeadGenie</span>
               <img
                 className="h-8 w-auto"
@@ -97,13 +97,13 @@ const Header = () => {
             <div className="-my-6 divide-y divide-gray-500/10">
               <div className="space-y-2 py-6">
                 <Link
-                  to="/"
+                  to="/dashboard"
                   className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-foreground hover:bg-gray-50"
                 >
                   Dashboard
                 </Link>
                 <Link
-                  to="/submit"
+                  to="/dashboard/submit"
                   className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-foreground hover:bg-gray-50"
                 >
                   Submit Lead

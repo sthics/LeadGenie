@@ -3,10 +3,10 @@ import { motion } from 'framer-motion'
 import { LayoutDashboard, Send, BarChart2, Settings } from 'lucide-react'
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Submit Lead', href: '/submit', icon: Send },
-  { name: 'Analytics', href: '/analytics', icon: BarChart2 },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Submit Lead', href: '/dashboard/submit', icon: Send },
+  { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart2 },
+  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ]
 
 const stats = [
@@ -22,7 +22,7 @@ const Sidebar = () => {
     <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
       <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r bg-background px-6 pb-4">
         <div className="flex h-16 shrink-0 items-center">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/dashboard" className="flex items-center gap-2">
             <img
               className="h-8 w-auto"
               src="/logo.svg"

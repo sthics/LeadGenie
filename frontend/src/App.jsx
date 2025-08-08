@@ -12,6 +12,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 import Dashboard from './pages/Dashboard'
 import LeadForm from './pages/LeadForm'
 import Login from './pages/Login'
+import LandingPage from './pages/LandingPage'
 
 function App() {
   const { theme, setTheme } = useTheme()
@@ -37,8 +38,12 @@ function App() {
     <Router>
       <div className={theme}>
         <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={
+          
+          {/* Protected Routes */}
+          <Route path="/dashboard" element={
             <ProtectedRoute>
               <Layout />
             </ProtectedRoute>
