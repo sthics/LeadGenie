@@ -16,13 +16,13 @@ class LeadCategory(str, PyEnum):
 
 
 class LeadStatus(str, PyEnum):
-    NEW = "new"
-    CONTACTED = "contacted"
-    QUALIFIED = "qualified"
-    PROCESSING = "processing"
-    FAILED = "failed"
-    LOST = "lost"
-    WON = "won"
+    NEW = "NEW"
+    CONTACTED = "CONTACTED" 
+    QUALIFIED = "QUALIFIED"
+    PROCESSING = "PROCESSING"
+    FAILED = "FAILED"
+    LOST = "LOST"
+    WON = "WON"
 
 
 class TimelineEnum(str, PyEnum):
@@ -43,7 +43,7 @@ class Lead(BaseModel):
     category = Column(String(50), nullable=False)  # hot/warm/cold
     score = Column(Integer, nullable=False)  # 0-100
     reason = Column(Text, nullable=True)
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # AI Analysis Results
     ai_score = Column(Integer, nullable=True)
