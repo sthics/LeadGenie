@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 import { ArrowRight, Check } from 'lucide-react'
+import { leads } from '../services/api'
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -47,11 +48,29 @@ const LeadForm = () => {
   const onSubmit = async (data) => {
     setIsSubmitting(true)
     try {
-      // TODO: Implement API call
-      console.log('Form data:', data)
-      toast.success('Lead submitted successfully!')
-      // Reset form or redirect
+      // Prepare data for API - map to backend expected format
+      const leadData = {
+        name: data.name,
+        email: data.email,
+        company: data.company || 'Not specified',
+        message: data.description,
+        // Add budget and timeline to message for AI processing
+        ...(data.budget || data.timeline ? {
+          message: `${data.description}${data.budget ? ` Budget: ${data.budget}.` : ''}${data.timeline ? ` Timeline: ${data.timeline}.` : ''}`
+        } : {})
+      }
+      
+      const result = await leads.qualify(leadData)
+      toast.success('Lead submitted successfully! AI qualification in progress.')
+      
+      // Reset form
+      setCurrentStep(0)
+      // Reset doesn't work with controlled form, so we need to manually reset
+      window.location.reload() // Simple reset for demo
+      
+      console.log('Lead qualified:', result)
     } catch (error) {
+      console.error('Submission error:', error)
       toast.error('Failed to submit lead. Please try again.')
     } finally {
       setIsSubmitting(false)

@@ -10,7 +10,7 @@ import useAuthStore from '../stores/auth'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
 })
 
 const Login = () => {
@@ -21,7 +21,7 @@ const Login = () => {
   // Redirect if already authenticated
   React.useEffect(() => {
     if (isAuthenticated) {
-      navigate('/', { replace: true })
+      navigate('/dashboard', { replace: true })
     }
   }, [isAuthenticated, navigate])
 
@@ -41,7 +41,7 @@ const Login = () => {
     try {
       await login(data)
       toast.success('Login successful!')
-      navigate('/')
+      navigate('/dashboard')
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Invalid email or password')
     }
@@ -97,6 +97,23 @@ const Login = () => {
                 Contact sales
               </a>
             </p>
+            
+            {/* Demo Credentials */}
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+              <p className="text-xs font-medium text-blue-800 dark:text-blue-200 mb-1">Demo Credentials:</p>
+              <p className="text-xs text-blue-700 dark:text-blue-300">Email: demo@leadgenie.com</p>
+              <p className="text-xs text-blue-700 dark:text-blue-300">Password: demo123</p>
+              <button
+                type="button"
+                onClick={() => {
+                  document.getElementById('email').value = 'demo@leadgenie.com'
+                  document.getElementById('password').value = 'demo123'
+                }}
+                className="mt-1 text-xs text-blue-600 dark:text-blue-400 underline hover:no-underline"
+              >
+                Click to fill demo credentials
+              </button>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
