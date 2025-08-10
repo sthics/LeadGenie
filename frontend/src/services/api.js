@@ -36,27 +36,43 @@ api.interceptors.response.use(
 
 export const auth = {
   login: async (credentials) => {
-    // Backend expects form data with username field, not email
-    const formData = new FormData()
-    formData.append('username', credentials.email)
-    formData.append('password', credentials.password)
-    
-    const response = await api.post('/api/v1/auth/login', formData, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    })
-    
-    // Backend returns access_token, frontend expects token
-    const data = response.data
-    const token = data.access_token
-    
-    // Store token for axios interceptor
-    localStorage.setItem('token', token)
-    
-    return {
-      token,
-      user: { email: credentials.email }, // We don't get user data from login response
+    try {
+      console.log('Attempting login for:', credentials.email)
+      
+      // Backend expects form data with username field, not email
+      const formData = new FormData()
+      formData.append('username', credentials.email)
+      formData.append('password', credentials.password)
+      
+      console.log('Sending login request...')
+      const response = await api.post('/api/v1/auth/login', formData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      })
+      
+      // Backend returns access_token, frontend expects token
+      const data = response.data
+      const token = data.access_token
+      console.log('Login successful, token received')
+      
+      // Store token for axios interceptor
+      localStorage.setItem('token', token)
+      
+      // Fetch full user data using the token
+      console.log('Fetching user data...')
+      const userResponse = await api.get('/api/v1/auth/users/me')
+      console.log('User data fetched successfully')
+      
+      return {
+        token,
+        user: userResponse.data,
+      }
+    } catch (error) {
+      console.error('Login failed:', error)
+      // Clean up token if login fails
+      localStorage.removeItem('token')
+      throw error
     }
   },
   
@@ -67,6 +83,11 @@ export const auth = {
   
   logout: () => {
     localStorage.removeItem('token')
+  },
+  
+  getCurrentUser: async () => {
+    const response = await api.get('/api/v1/auth/users/me')
+    return response.data
   },
 }
 

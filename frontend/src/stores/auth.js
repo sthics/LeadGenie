@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { auth } from '@/services/api'
+import { auth } from '../services/api'
 
 const useAuthStore = create(
   persist(
@@ -12,50 +12,41 @@ const useAuthStore = create(
       error: null,
 
       // Initialize auth state from localStorage
-      initialize: () => {
+      initialize: async () => {
+        set({ isLoading: true })
         const token = localStorage.getItem('token')
         if (token) {
-          const state = get()
-          if (state.user && state.token) {
-            set({ isAuthenticated: true })
+          try {
+            // Verify token is still valid by fetching current user
+            const user = await auth.getCurrentUser()
+            set({ user, token, isAuthenticated: true, isLoading: false })
+          } catch (error) {
+            // Token is invalid, clear everything
+            localStorage.removeItem('token')
+            set({ user: null, token: null, isAuthenticated: false, isLoading: false })
           }
+        } else {
+          set({ user: null, token: null, isAuthenticated: false, isLoading: false })
         }
       },
 
       login: async (credentials) => {
-        set({ isLoading: true, error: null })
-        
-        // Demo mode - bypass authentication for demo credentials
-        if (credentials.email === 'demo@leadgenie.com' && credentials.password === 'demo123') {
-          const demoUser = {
-            id: 'demo-user-id',
-            email: 'demo@leadgenie.com',
-            full_name: 'Demo User',
-            role: 'admin'
-          }
-          const demoToken = 'demo-token-' + Date.now()
-          
-          // Store in localStorage for persistence
-          localStorage.setItem('token', demoToken)
-          
-          set({ 
-            user: demoUser, 
-            token: demoToken, 
-            isAuthenticated: true, 
-            isLoading: false 
-          })
-          
-          return { user: demoUser, token: demoToken }
+        // Prevent concurrent login attempts
+        const currentState = get()
+        if (currentState.isLoading) {
+          return currentState.user ? { user: currentState.user, token: currentState.token } : null
         }
         
-        // Regular authentication flow
+        set({ isLoading: true, error: null })
+        
         try {
           const { token, user } = await auth.login(credentials)
           set({ user, token, isAuthenticated: true, isLoading: false })
           return { user, token }
         } catch (error) {
+          console.error('Login error:', error)
           set({
-            error: error.response?.data?.detail || 'Failed to login',
+            error: error.response?.data?.detail || error.message || 'Failed to login',
             isLoading: false,
           })
           throw error
@@ -78,8 +69,10 @@ const useAuthStore = create(
       },
 
       logout: () => {
-        auth.logout()
-        set({ user: null, token: null, isAuthenticated: false })
+        // Clear localStorage
+        localStorage.removeItem('token')
+        // Clear auth state
+        set({ user: null, token: null, isAuthenticated: false, error: null })
         // Redirect to landing page after logout
         window.location.href = '/'
       },
