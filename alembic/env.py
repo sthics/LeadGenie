@@ -14,7 +14,8 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
 # Import your models here
-from app.models.database import Base
+from app.models.base import BaseModel as Base
+from app.models import user, refresh_token  # Import all models
 from app.core.database import DATABASE_URL
 
 from app.core.config import settings
