@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
+    # Cookie Security Settings
+    SECURE_COOKIES: bool = False  # Set to True in production with HTTPS
+    
     # CORS Settings
     backend_cors_origins_str: str = Field(default="", validation_alias="BACKEND_CORS_ORIGINS")
 

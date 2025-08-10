@@ -11,7 +11,7 @@ from app.models.base import BaseModel
 
 class UserRole(str, PyEnum):
     ADMIN = "admin"
-    SALES_MANAGER = "sales_manager"
+    SALES_MANAGER = "sales_manager" 
     SALES_REP = "sales_rep"
 
 
@@ -22,7 +22,7 @@ class User(BaseModel):
     email = Column(String(255), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     full_name = Column(String(255), nullable=True)
-    role = Column(PgEnum(UserRole, name='user_role_enum', create_type=False), nullable=False, default=UserRole.SALES_REP)
+    role = Column(PgEnum('admin', 'sales_manager', 'sales_rep', name='user_role_enum', create_type=False), nullable=False, default='sales_rep')
     company_id = Column(UUID(as_uuid=True), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     is_superuser = Column(Boolean, default=False, nullable=False)
@@ -32,6 +32,7 @@ class User(BaseModel):
     created_leads = relationship("Lead", foreign_keys="[Lead.created_by]", back_populates="creator")
     assigned_leads = relationship("Lead", foreign_keys="[Lead.assigned_to]", back_populates="assignee")
     notifications = relationship("Notification", back_populates="user")
+    refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User {self.email}>" 
