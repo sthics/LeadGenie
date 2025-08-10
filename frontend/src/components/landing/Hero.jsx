@@ -40,7 +40,7 @@ const Hero = () => {
             className="mt-10 flex items-center justify-center gap-x-6"
           >
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/register')}
               className="group flex items-center gap-2 bg-primary px-8 py-3 text-lg font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 rounded-md transition-all duration-200"
             >
               <Zap className="h-5 w-5" />

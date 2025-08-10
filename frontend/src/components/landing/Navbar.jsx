@@ -38,7 +38,7 @@ const Navbar = () => {
               Login
             </button>
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/register')}
               className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
             >
               Sign Up
