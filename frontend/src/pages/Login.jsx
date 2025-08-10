@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -28,6 +28,7 @@ const Login = () => {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(loginSchema),
@@ -38,12 +39,22 @@ const Login = () => {
   })
 
   const onSubmit = async (data) => {
+    if (isLoading) {
+      console.log('Login already in progress, ignoring submission')
+      return
+    }
+    
     try {
-      await login(data)
-      toast.success('Login successful!')
-      navigate('/dashboard')
+      console.log('Submitting login form')
+      const result = await login(data)
+      if (result) {
+        toast.success('Login successful!')
+        navigate('/dashboard')
+      }
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Invalid email or password')
+      console.error('Login submission error:', error)
+      const errorMessage = error.response?.data?.detail || error.message || 'Invalid email or password'
+      toast.error(errorMessage)
     }
   }
 
@@ -90,28 +101,28 @@ const Login = () => {
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Don't have an account?{' '}
-              <a
-                href="#"
+              <Link
+                to="/register"
                 className="font-medium text-primary hover:text-primary/90"
               >
-                Contact sales
-              </a>
+                Sign up here
+              </Link>
             </p>
             
-            {/* Demo Credentials */}
+            {/* Admin Test Credentials */}
             <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-              <p className="text-xs font-medium text-blue-800 dark:text-blue-200 mb-1">Demo Credentials:</p>
-              <p className="text-xs text-blue-700 dark:text-blue-300">Email: demo@leadgenie.com</p>
-              <p className="text-xs text-blue-700 dark:text-blue-300">Password: demo123</p>
+              <p className="text-xs font-medium text-blue-800 dark:text-blue-200 mb-1">Admin Test Account:</p>
+              <p className="text-xs text-blue-700 dark:text-blue-300">Email: admin@leadgenie.com</p>
+              <p className="text-xs text-blue-700 dark:text-blue-300">Password: admin123</p>
               <button
                 type="button"
                 onClick={() => {
-                  document.getElementById('email').value = 'demo@leadgenie.com'
-                  document.getElementById('password').value = 'demo123'
+                  setValue('email', 'admin@leadgenie.com', { shouldValidate: true })
+                  setValue('password', 'admin123', { shouldValidate: true })
                 }}
                 className="mt-1 text-xs text-blue-600 dark:text-blue-400 underline hover:no-underline"
               >
-                Click to fill demo credentials
+                Click to fill admin credentials
               </button>
             </div>
           </div>

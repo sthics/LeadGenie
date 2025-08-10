@@ -12,6 +12,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 import Dashboard from './pages/Dashboard'
 import LeadForm from './pages/LeadForm'
 import Login from './pages/Login'
+import Register from './pages/Register'
 import LandingPage from './pages/LandingPage'
 
 function App() {
@@ -20,7 +21,10 @@ function App() {
 
   useEffect(() => {
     // Initialize authentication state
-    initialize()
+    const initAuth = async () => {
+      await initialize()
+    }
+    initAuth()
 
     // Check system preference for dark mode
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -41,6 +45,7 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           
           {/* Protected Routes */}
           <Route path="/dashboard" element={
