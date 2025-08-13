@@ -227,7 +227,7 @@ const Dashboard = () => {
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {displayLeads.map((lead) => {
           const category = lead.category || 'cold'
-          const CategoryIcon = categoryIcons[category]
+          const CategoryIcon = categoryIcons[category] || categoryIcons.cold
           const score = lead.ai_score || lead.score || 0
           
           return (

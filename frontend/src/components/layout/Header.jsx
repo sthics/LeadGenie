@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Menu, X, Sun, Moon, User, LogOut } from 'lucide-react'
-import { useTheme } from '@/hooks/useTheme'
+import { useTheme } from '../../hooks/useTheme'
 import useAuthStore from '../../stores/auth'
 
 const Header = () => {

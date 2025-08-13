@@ -29,10 +29,12 @@ const LeadForm = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isValid },
     watch,
+    trigger,
   } = useForm({
     resolver: zodResolver(formSchema),
+    mode: 'onChange',
     defaultValues: {
       name: '',
       email: '',
@@ -46,6 +48,14 @@ const LeadForm = () => {
   const formData = watch()
 
   const onSubmit = async (data) => {
+    console.log('Form submitted - current step:', currentStep)
+    
+    // Only allow submission on the final step
+    if (currentStep !== steps.length - 1) {
+      console.log('Preventing submission - not on final step')
+      return
+    }
+    
     setIsSubmitting(true)
     try {
       // Prepare data for API - map to backend expected format
@@ -77,13 +87,32 @@ const LeadForm = () => {
     }
   }
 
-  const nextStep = () => {
-    setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
+  const nextStep = async () => {
+    console.log('Next step clicked - current step:', currentStep)
+    
+    // Validate current step before proceeding
+    let fieldsToValidate = []
+    if (currentStep === 0) {
+      fieldsToValidate = ['name', 'email', 'company']
+    } else if (currentStep === 1) {
+      fieldsToValidate = ['description']
+    }
+    
+    const isStepValid = await trigger(fieldsToValidate)
+    console.log('Step validation result:', isStepValid, 'Fields validated:', fieldsToValidate)
+    
+    if (isStepValid) {
+      console.log('Moving to next step:', currentStep + 1)
+      setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
+    } else {
+      console.log('Validation failed, staying on current step')
+    }
   }
 
   const prevStep = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 0))
   }
+
 
   const renderStep = () => {
     switch (currentStep) {
@@ -198,6 +227,16 @@ const LeadForm = () => {
       case 2:
         return (
           <div className="space-y-6">
+            {(Object.keys(errors).length > 0) && (
+              <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
+                <h4 className="text-sm font-medium text-destructive mb-2">Please fix the following errors:</h4>
+                <ul className="text-sm text-destructive space-y-1">
+                  {Object.entries(errors).map(([field, error]) => (
+                    <li key={field}>• {error.message}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="rounded-lg border bg-card p-4">
               <h3 className="text-lg font-medium">Review Your Information</h3>
               <dl className="mt-4 space-y-4">
@@ -264,7 +303,7 @@ const LeadForm = () => {
         </nav>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <div className="space-y-8">
         <motion.div
           key={currentStep}
           initial={{ opacity: 0, x: 20 }}
@@ -296,8 +335,9 @@ const LeadForm = () => {
             </button>
           ) : (
             <button
-              type="submit"
-              disabled={isSubmitting}
+              type="button"
+              onClick={() => handleSubmit(onSubmit)()}
+              disabled={isSubmitting || !isValid}
               className="ml-auto inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               {isSubmitting ? (
@@ -311,7 +351,7 @@ const LeadForm = () => {
             </button>
           )}
         </div>
-      </form>
+      </div>
     </div>
   )
 }
