@@ -47,9 +47,12 @@ class Lead(BaseModel):
 
     # AI Analysis Results
     ai_score = Column(Integer, nullable=True)
+    enhanced_score = Column(Integer, nullable=True)  # Enhanced scoring system result
     intent_analysis = Column(JSON, nullable=True)
     buying_signals = Column(JSON, nullable=True)  # List[str]
     risk_factors = Column(JSON, nullable=True)    # List[str]
+    scoring_breakdown = Column(JSON, nullable=True)  # Detailed scoring breakdown
+    next_actions = Column(JSON, nullable=True)  # List[str] - AI suggested next actions
     
     # Metadata
     source = Column(String, nullable=False, default="form")

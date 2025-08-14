@@ -9,7 +9,7 @@ from uuid import UUID
 from app.core.database import get_db
 from app.services.ai import LeadQualificationAI
 from app.models.lead import Lead, LeadStatus
-from app.schemas.lead import LeadCreate, LeadResponse, LeadList, LeadStats, LeadUpdate
+from app.schemas.lead import LeadCreate, LeadResponse, LeadList, LeadStats, LeadUpdate, LeadScoringAnalysis
 
 logger = structlog.get_logger()
 router = APIRouter()
@@ -61,21 +61,29 @@ async def process_lead_qualification(
     Background task for lead qualification.
     """
     try:
-        ai_service = LeadQualificationAI()
+        ai_service = LeadQualificationAI(db)
         # Get AI qualification
+        lead_data["id"] = lead_id
         qualification = await ai_service.qualify_lead(lead_data)
 
-        # Update lead record
+        # Update lead record with enhanced data
         lead_record = await db.get(Lead, lead_id)
         if lead_record:
+            # Store both AI and enhanced scores
             lead_record.ai_score = qualification.get("score")
-            lead_record.category = qualification.get("category")
+            lead_record.enhanced_score = qualification.get("enhanced_score", qualification.get("score"))
+            lead_record.score = qualification.get("enhanced_score", qualification.get("score"))  # Use enhanced as primary
+            lead_record.category = qualification.get("category").lower() if qualification.get("category") else "cold"
+            
+            # Store detailed analysis
             lead_record.intent_analysis = {
                 "confidence": qualification.get("confidence"),
                 "reasoning": qualification.get("reasoning")
             }
-            lead_record.buying_signals = qualification.get("buying_signals")
-            lead_record.risk_factors = qualification.get("risk_factors")
+            lead_record.buying_signals = qualification.get("buying_signals", [])
+            lead_record.risk_factors = qualification.get("risk_factors", [])
+            lead_record.next_actions = qualification.get("next_actions", [])
+            lead_record.scoring_breakdown = qualification.get("scoring_breakdown")
             lead_record.status = LeadStatus.QUALIFIED.value
 
             await db.commit()
@@ -83,7 +91,8 @@ async def process_lead_qualification(
             logger.info(
                 "lead_qualified",
                 lead_id=lead_id,
-                score=qualification.get("score"),
+                ai_score=qualification.get("score"),
+                enhanced_score=qualification.get("enhanced_score"),
                 category=qualification.get("category")
             )
 
@@ -185,9 +194,12 @@ async def get_lead_stats(db: AsyncSession = Depends(get_db)):
         qualified_result = await db.execute(select(func.count(Lead.id)).where(Lead.status == LeadStatus.QUALIFIED.value))
         qualified_leads = qualified_result.scalar() or 0
         
-        # Average score
+        # Average scores
         avg_result = await db.execute(select(func.avg(Lead.ai_score)).where(Lead.ai_score.is_not(None)))
         avg_score = avg_result.scalar() or 0.0
+        
+        avg_enhanced_result = await db.execute(select(func.avg(Lead.enhanced_score)).where(Lead.enhanced_score.is_not(None)))
+        avg_enhanced_score = avg_enhanced_result.scalar() or 0.0
         
         return LeadStats(
             total_leads=total_leads,
@@ -195,6 +207,7 @@ async def get_lead_stats(db: AsyncSession = Depends(get_db)):
             warm_leads=warm_leads,
             cold_leads=cold_leads,
             avg_score=float(avg_score),
+            avg_enhanced_score=float(avg_enhanced_score),
             processing_leads=processing_leads,
             qualified_leads=qualified_leads
         )
@@ -253,6 +266,46 @@ async def update_lead(
         raise
     except Exception as e:
         logger.error("update_lead_failed", lead_id=lead_id, error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{lead_id}/analysis", response_model=LeadScoringAnalysis)
+async def get_lead_scoring_analysis(
+    lead_id: UUID,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get detailed scoring analysis for a specific lead.
+    """
+    try:
+        lead = await db.get(Lead, lead_id)
+        if not lead:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        
+        # Extract confidence from intent_analysis if available
+        confidence = None
+        reasoning = None
+        if lead.intent_analysis:
+            confidence = lead.intent_analysis.get("confidence")
+            reasoning = lead.intent_analysis.get("reasoning")
+        
+        return LeadScoringAnalysis(
+            lead_id=lead_id,
+            ai_score=lead.ai_score,
+            enhanced_score=lead.enhanced_score,
+            category=lead.category,
+            confidence=confidence,
+            buying_signals=lead.buying_signals,
+            risk_factors=lead.risk_factors,
+            next_actions=lead.next_actions,
+            scoring_breakdown=lead.scoring_breakdown,
+            reasoning=reasoning
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("get_lead_analysis_failed", lead_id=lead_id, error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
