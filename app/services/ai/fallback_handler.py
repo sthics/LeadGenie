@@ -1,4 +1,9 @@
+from .scoring import ScoringService
+
 class FallbackHandler:
+    def __init__(self):
+        self.scoring_service = ScoringService()
+
     def rule_based_qualify(self, lead_data: dict) -> dict:
         """
         Pure rule-based qualification when AI fails
@@ -15,23 +20,18 @@ class FallbackHandler:
             score += 15
             signals.append("Urgency expressed")
 
+        score = min(100, score)
+        category = self.scoring_service.assign_category(score)
+
         return {
-            "score": min(100, score),
-            "category": self._assign_category(score),
+            "score": score,
+            "category": category,
             "confidence": 0.7,  # Lower confidence for rule-based
             "reasoning": "Rule-based qualification due to AI service failure.",
             "buying_signals": signals,
             "risk_factors": risks,
             "next_actions": ["Manual review required"],
         }
-
-    def _assign_category(self, score: int) -> str:
-        if score >= 80:
-            return "Hot"
-        elif score >= 60:
-            return "Warm"
-        else:
-            return "Cold"
 
     def _has_budget_mentioned(self, description: str) -> bool:
         if not description:
