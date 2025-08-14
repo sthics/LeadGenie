@@ -181,3 +181,14 @@ venv.bak/
 # docs 
 docs/ 
 MDCollection/
+
+# Test and development files
+test_*.py
+debug_*.py
+*_test*.py
+groq_*.py
+*.json
+*analysis*.json
+*scoring*.json
+cookies.txt
+*.sql
