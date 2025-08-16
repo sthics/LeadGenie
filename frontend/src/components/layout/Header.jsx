@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Menu, X, Sun, Moon, User, LogOut } from 'lucide-react'
 import { useTheme } from '../../hooks/useTheme'
@@ -9,6 +9,7 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { theme, toggleTheme } = useTheme()
   const { user, logout } = useAuthStore()
+  const location = useLocation()
 
   const handleLogout = () => {
     logout()
@@ -76,7 +77,10 @@ const Header = () => {
       >
         <div className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-background px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
           <div className="flex items-center justify-between">
-            <Link to="/dashboard" className="-m-1.5 p-1.5">
+            <Link 
+              to={location.pathname === '/dashboard' ? '/' : '/dashboard'} 
+              className="-m-1.5 p-1.5 hover:opacity-80 transition-opacity"
+            >
               <span className="sr-only">LeadGenie</span>
               <img
                 className="h-8 w-auto"
