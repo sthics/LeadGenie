@@ -62,7 +62,7 @@ These are automatically set when using the blueprint:
 - `POSTGRES_DB`
 - `REDIS_HOST`
 - `REDIS_PORT`
-- `REDIS_PASSWORD`
+- `REDIS_URL` (Redis connection string)
 
 ### 4. Services Created
 

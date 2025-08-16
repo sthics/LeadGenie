@@ -2,7 +2,7 @@ services:
   # Main API Service
   - type: web
     name: leadgenie-api
-    runtime: python3
+    runtime: python
     buildCommand: pip install -r requirements.txt && python scripts/deploy.py
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     plan: starter
@@ -48,11 +48,11 @@ services:
           type: redis
           name: leadgenie-redis
           property: port
-      - key: REDIS_PASSWORD
+      - key: REDIS_URL
         fromService:
           type: redis
           name: leadgenie-redis
-          property: password
+          property: connectionString
       - key: FIRST_SUPERUSER
         value: admin@leadgenie.com
       - key: FIRST_SUPERUSER_PASSWORD
@@ -64,6 +64,7 @@ services:
     plan: starter
     region: oregon
     maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
 
 databases:
   # PostgreSQL Database

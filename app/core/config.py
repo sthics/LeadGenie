@@ -39,9 +39,10 @@ class Settings(BaseSettings):
         return self
 
     # Redis Settings
-    REDIS_HOST: str
+    REDIS_HOST: Optional[str] = None
     REDIS_PORT: int = 6379
     REDIS_PASSWORD: Optional[str] = None
+    REDIS_URL: Optional[str] = None
 
     # OpenAI Settings
     OPENAI_API_KEY: Optional[str] = None
