@@ -7,8 +7,10 @@ import structlog
 from uuid import UUID
 
 from app.core.database import get_db
+from app.core.deps import get_current_user
 from app.services.ai import LeadQualificationAI
 from app.models.lead import Lead, LeadStatus
+from app.models.user import User
 from app.schemas.lead import LeadCreate, LeadResponse, LeadList, LeadStats, LeadUpdate, LeadScoringAnalysis
 
 logger = structlog.get_logger()
@@ -312,7 +314,8 @@ async def get_lead_scoring_analysis(
 @router.delete("/{lead_id}")
 async def delete_lead(
     lead_id: UUID,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Delete a specific lead.
