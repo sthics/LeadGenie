@@ -192,3 +192,14 @@ groq_*.py
 *scoring*.json
 cookies.txt
 *.sql
+
+# Claude Code Agent Files
+.agents/
+leadgenie-fastapi-dev.agent
+react-frontend-specialist.agent
+ai-ml-integration-specialist.agent
+database-devops-engineer.agent
+security-compliance-auditor.agent
+performance-optimizer.agent
+master-orchestrator.agent
+*.agent
