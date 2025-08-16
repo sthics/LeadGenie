@@ -17,8 +17,8 @@ const Hero = () => {
             transition={{ duration: 0.6 }}
             className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl"
           >
-            Stop Wasting Time on{' '}
-            <span className="text-primary">Bad Leads</span>
+            Instantly Find Your{' '}
+            <span className="text-primary">Hottest Leads</span>
           </motion.h1>
 
           {/* Sub-headline */}
@@ -28,8 +28,8 @@ const Hero = () => {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="mt-6 text-lg leading-8 text-muted-foreground max-w-3xl mx-auto"
           >
-            LeadGenie uses AI to automatically qualify, score, and prioritize your leads, 
-            so your sales team can focus on what matters: closing deals.
+            LeadGenie uses AI to analyze, score, and prioritize your inbound leads, 
+            so your team can focus on closing.
           </motion.p>
 
           {/* CTA Button */}
@@ -44,7 +44,7 @@ const Hero = () => {
               className="group flex items-center gap-2 bg-primary px-8 py-3 text-lg font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 rounded-md transition-all duration-200"
             >
               <Zap className="h-5 w-5" />
-              Get Started for Free
+              Start Your Free Trial
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </button>
           </motion.div>

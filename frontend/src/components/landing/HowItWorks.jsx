@@ -1,30 +1,30 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FileText, Brain, Trophy } from 'lucide-react'
+import { Link, Brain, Target } from 'lucide-react'
 
 const HowItWorks = () => {
   const navigate = useNavigate()
   const steps = [
     {
       number: '01',
-      icon: FileText,
-      title: 'Submit Your Lead',
-      description: 'Input lead information through our simple and intuitive form.',
+      icon: Link,
+      title: 'Connect',
+      description: 'Connect your lead sources.',
       color: 'from-blue-500 to-blue-600'
     },
     {
       number: '02',
       icon: Brain,
-      title: 'Let AI Do the Work',
-      description: 'Our AI engine analyzes the lead\'s information, intent, and budget.',
+      title: 'Analyze',
+      description: 'Our AI analyzes each lead.',
       color: 'from-purple-500 to-purple-600'
     },
     {
       number: '03',
-      icon: Trophy,
-      title: 'Focus on Hot Leads',
-      description: 'Receive a prioritized list of qualified leads, ready for your sales team to engage.',
+      icon: Target,
+      title: 'Prioritize',
+      description: 'Get a prioritized list of hot leads.',
       color: 'from-green-500 to-green-600'
     }
   ]
@@ -62,11 +62,10 @@ const HowItWorks = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Get Started in 3 Simple Steps
+            How LeadGenie Works
           </h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Our streamlined process makes it easy to start qualifying leads with AI 
-            in just minutes.
+            Simple, automated lead qualification in three easy steps.
           </p>
         </motion.div>
 
@@ -86,11 +85,11 @@ const HowItWorks = () => {
             >
               {/* Connecting Line (hidden on mobile) */}
               {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-16 left-1/2 w-full h-px bg-gradient-to-r from-border to-transparent z-0" />
+                <div className="hidden lg:block absolute top-16 left-1/2 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 z-0 rounded-full shadow-lg" />
               )}
 
               {/* Step Card */}
-              <div className="relative bg-card border border-border rounded-2xl p-8 text-center group-hover:shadow-lg transition-all duration-300 z-10">
+              <div className="relative bg-card border-2 border-l-4 border-l-blue-500 border-r-4 border-r-green-500 border-t-blue-300 border-b-green-300 rounded-2xl p-8 text-center group-hover:shadow-lg transition-all duration-300 z-10">
                 {/* Step Number */}
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 text-primary font-bold text-xl mb-6">
                   {step.number}

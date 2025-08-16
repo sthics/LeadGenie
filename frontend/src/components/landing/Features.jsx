@@ -1,23 +1,23 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Brain, Target, BarChart3 } from 'lucide-react'
+import { Brain, Target, Clock } from 'lucide-react'
 
 const Features = () => {
   const features = [
     {
       icon: Brain,
-      title: 'AI-Powered Qualification',
-      description: 'Leverage the power of AI to analyze lead data and identify high-intent prospects instantly.'
+      title: 'Understand True Buying Intent',
+      description: 'Our natural language processing identifies genuine purchase signals hidden in lead communications, giving you confidence in every conversation.'
     },
     {
       icon: Target,
-      title: 'Smart Lead Scoring',
-      description: 'Our intelligent scoring system categorizes leads as "Hot", "Warm", or "Cold" with detailed reasoning.'
+      title: 'Focus Your Energy on Deals That Will Close',
+      description: 'Advanced lead scoring eliminates guesswork, directing your team toward prospects most likely to convert into revenue.'
     },
     {
-      icon: BarChart3,
-      title: 'Prioritized Dashboard',
-      description: 'A clean, intuitive dashboard that presents your most promising leads first.'
+      icon: Clock,
+      title: 'Save 10+ Hours Per Week',
+      description: 'Automated filtering and prioritization eliminates manual lead qualification, freeing your team to focus on selling.'
     }
   ]
 
@@ -74,7 +74,7 @@ const Features = () => {
             <motion.div
               key={index}
               variants={itemVariants}
-              className="group relative bg-background p-8 rounded-2xl shadow-sm border border-border hover:shadow-lg transition-all duration-300"
+              className="group relative bg-background p-8 rounded-2xl shadow-sm border-2 border-l-4 border-l-purple-500 border-r-4 border-r-blue-500 border-t-purple-300 border-b-blue-300 hover:shadow-lg transition-all duration-300"
             >
               {/* Icon */}
               <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-lg mb-6 group-hover:bg-primary/20 transition-colors">
