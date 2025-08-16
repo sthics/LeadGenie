@@ -80,7 +80,7 @@ const Header = () => {
               <span className="sr-only">LeadGenie</span>
               <img
                 className="h-8 w-auto"
-                src="/logo.svg"
+                src="/logoupdated.png"
                 alt="LeadGenie"
               />
             </Link>
