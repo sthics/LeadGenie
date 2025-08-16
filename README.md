@@ -1,10 +1,24 @@
 # LeadGenie - AI-Powered Lead Qualification Platform
 
-[![Demo](https://img.shields.io/badge/Demo-Live-green)](http://localhost:5174) [![API](https://img.shields.io/badge/API-FastAPI-blue)](http://localhost:8000/api/v1/docs) [![AI](https://img.shields.io/badge/AI-Groq%20Llama3-orange)](https://groq.com)
+[![Demo](https://img.shields.io/badge/Demo-Live-green)](https://leadgenie.vercel.app) [![API](https://img.shields.io/badge/API-FastAPI-blue)](http://localhost:8000/api/v1/docs) [![AI](https://img.shields.io/badge/AI-Groq%20Llama3-orange)](https://groq.com) [![Deploy](https://img.shields.io/badge/Deploy-100%25%20FREE-brightgreen)](./DEPLOYMENT.md)
 
 **Transform your sales pipeline with AI-powered lead qualification that reduces qualification time by 80% and increases conversion rates by 20%.**
 
 LeadGenie automatically analyzes, scores, and categorizes incoming leads using advanced AI, helping sales teams focus on high-conversion prospects and close more deals faster.
+
+## 🆓 Deploy for FREE in 5 Minutes
+
+LeadGenie can be deployed completely free using generous free tiers:
+- **Backend**: Railway ($5 credit/month - FREE)
+- **Database**: Supabase (500MB forever - FREE)  
+- **AI**: Groq (generous limits - FREE)
+- **Frontend**: Vercel (unlimited - FREE)
+
+**Total cost: $0.00/month**
+
+### 🚀 Quick Deployment:
+- **Backend**: [5-min Deploy Guide](./deployment-checklist.md)
+- **Frontend**: [2-min Vercel Guide](./frontend/vercel-checklist.md)
 
 ---
 

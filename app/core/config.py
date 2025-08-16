@@ -38,11 +38,16 @@ class Settings(BaseSettings):
             self.SQLALCHEMY_DATABASE_URI = f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}/{self.POSTGRES_DB}"
         return self
 
-    # Redis Settings
+    # Redis Settings (Optional for free deployments)
     REDIS_HOST: Optional[str] = None
     REDIS_PORT: int = 6379
     REDIS_PASSWORD: Optional[str] = None
     REDIS_URL: Optional[str] = None
+    
+    @property
+    def REDIS_AVAILABLE(self) -> bool:
+        """Check if Redis configuration is available"""
+        return bool(self.REDIS_URL or (self.REDIS_HOST and self.REDIS_PORT))
 
     # OpenAI Settings
     OPENAI_API_KEY: Optional[str] = None
