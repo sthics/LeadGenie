@@ -5,16 +5,50 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
     "./src/**/*.stories.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'class',
   theme: {
-    container: {
-      center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
-    },
     extend: {
+      colors: {
+        'brand-dark': '#100F19',
+        'brand-purple': {
+          DEFAULT: '#9B59B6',
+          dark: '#8E44AD',
+        },
+        'brand-blue': '#3B82F6',
+        'brand-teal': '#29D9D5',
+        'text-light': {
+          primary: '#E5E7EB',
+          secondary: '#9CA3AF',
+        },
+        'text-dark': {
+          primary: '#100F19',
+          secondary: '#6B7280',
+        },
+        // Standard colors that might be missing
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))", 
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+      },
       borderRadius: {
         lg: '0.5rem',
         md: '0.375rem',
@@ -36,5 +70,4 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
 } 
