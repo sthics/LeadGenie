@@ -17,12 +17,12 @@ class Settings(BaseSettings):
     SECURE_COOKIES: bool = False  # Set to True in production with HTTPS
     
     # CORS Settings
-    backend_cors_origins_str: str = Field(default="", validation_alias="BACKEND_CORS_ORIGINS")
+    backend_cors_origins_str: str = Field(default="http://localhost:3000,http://localhost:5173,http://localhost:5174", validation_alias="BACKEND_CORS_ORIGINS")
 
     @property
     def BACKEND_CORS_ORIGINS(self) -> List[str]:
         if not self.backend_cors_origins_str:
-            return []
+            return ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"]
         return [origin.strip() for origin in self.backend_cors_origins_str.split(",")]
 
     # Database Settings
