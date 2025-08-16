@@ -16,27 +16,40 @@ import Register from './pages/Register'
 import LandingPage from './pages/LandingPage'
 
 function App() {
-  const { theme, setTheme } = useTheme()
+  const { theme, setLightTheme, setDarkTheme } = useTheme()
   const { initialize } = useAuthStore()
 
+  // Initialize authentication state once on mount
   useEffect(() => {
-    // Initialize authentication state
     const initAuth = async () => {
       await initialize()
     }
     initAuth()
+  }, []) // Empty dependency array - run only once
 
+  // Handle theme initialization and changes
+  useEffect(() => {
     // Check system preference for dark mode
     const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    setTheme(isDark ? 'dark' : 'light')
+    if (isDark) {
+      setDarkTheme()
+    } else {
+      setLightTheme()
+    }
 
     // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    const handleChange = (e) => setTheme(e.matches ? 'dark' : 'light')
+    const handleChange = (e) => {
+      if (e.matches) {
+        setDarkTheme()
+      } else {
+        setLightTheme()
+      }
+    }
     mediaQuery.addEventListener('change', handleChange)
 
     return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [setTheme, initialize])
+  }, [setLightTheme, setDarkTheme])
 
   return (
     <Router>
@@ -48,13 +61,13 @@ function App() {
           <Route path="/register" element={<Register />} />
           
           {/* Protected Routes */}
-          <Route path="/dashboard" element={
+          <Route element={
             <ProtectedRoute>
               <Layout />
             </ProtectedRoute>
           }>
-            <Route index element={<Dashboard />} />
-            <Route path="submit" element={<LeadForm />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/submit" element={<LeadForm />} />
           </Route>
         </Routes>
         <Toaster
