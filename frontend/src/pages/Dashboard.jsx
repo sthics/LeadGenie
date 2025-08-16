@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Search, Filter, ChevronDown, Star, Clock, Snowflake, TrendingUp, Users, Target, Award } from 'lucide-react'
+import { Search, Filter, ChevronDown, Star, Clock, Snowflake, TrendingUp, Users, Target, Award, Trash2, MoreVertical } from 'lucide-react'
 import { leads } from '../services/api'
 import { toast } from 'react-hot-toast'
 
@@ -55,6 +55,15 @@ const Dashboard = () => {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
+  const [deletingLeadId, setDeletingLeadId] = useState(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [leadToDelete, setLeadToDelete] = useState(null)
+  const [selectedLeads, setSelectedLeads] = useState(new Set())
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
+
+  // Define displayLeads early to avoid reference errors
+  const displayLeads = leadsData.leads.length > 0 ? leadsData.leads : mockLeads
 
   // Fetch leads and stats
   useEffect(() => {
@@ -108,7 +117,94 @@ const Dashboard = () => {
     }
   }
 
-  const displayLeads = leadsData.leads.length > 0 ? leadsData.leads : mockLeads
+  const handleDeleteLead = (lead) => {
+    setLeadToDelete(lead)
+    setShowDeleteModal(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!leadToDelete) return
+
+    try {
+      setDeletingLeadId(leadToDelete.id)
+      await leads.delete(leadToDelete.id)
+      toast.success(`Lead "${leadToDelete.name}" deleted successfully`)
+      
+      // Refresh leads and stats
+      await fetchLeads()
+      await fetchStats()
+      
+      // Close modal
+      setShowDeleteModal(false)
+      setLeadToDelete(null)
+    } catch (error) {
+      console.error('Error deleting lead:', error)
+      toast.error('Failed to delete lead')
+    } finally {
+      setDeletingLeadId(null)
+    }
+  }
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false)
+    setLeadToDelete(null)
+  }
+
+  // Bulk selection functions
+  const toggleSelectLead = (leadId) => {
+    const newSelected = new Set(selectedLeads)
+    if (newSelected.has(leadId)) {
+      newSelected.delete(leadId)
+    } else {
+      newSelected.add(leadId)
+    }
+    setSelectedLeads(newSelected)
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedLeads.size === displayLeads.length) {
+      setSelectedLeads(new Set())
+    } else {
+      setSelectedLeads(new Set(displayLeads.map(lead => lead.id)))
+    }
+  }
+
+  const handleBulkDelete = () => {
+    if (selectedLeads.size > 0) {
+      setShowBulkDeleteModal(true)
+    }
+  }
+
+  const confirmBulkDelete = async () => {
+    if (selectedLeads.size === 0) return
+
+    try {
+      setBulkDeleting(true)
+      
+      // Delete all selected leads
+      await Promise.all(
+        Array.from(selectedLeads).map(leadId => leads.delete(leadId))
+      )
+      
+      toast.success(`${selectedLeads.size} lead(s) deleted successfully`)
+      
+      // Clear selection and refresh data
+      setSelectedLeads(new Set())
+      await fetchLeads()
+      await fetchStats()
+      
+      setShowBulkDeleteModal(false)
+    } catch (error) {
+      console.error('Error deleting leads:', error)
+      toast.error('Failed to delete some leads')
+    } finally {
+      setBulkDeleting(false)
+    }
+  }
+
+  const cancelBulkDelete = () => {
+    setShowBulkDeleteModal(false)
+  }
 
   if (loading && !displayLeads.length) {
     return (
@@ -161,7 +257,14 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Avg Score</p>
-                <p className="text-2xl font-bold text-green-500">{Math.round(stats.avg_score)}%</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl font-bold text-green-500">{Math.round(stats.avg_enhanced_score || stats.avg_score)}%</p>
+                  {stats.avg_enhanced_score && stats.avg_enhanced_score !== stats.avg_score && (
+                    <div className="text-xs text-muted-foreground">
+                      (AI: {Math.round(stats.avg_score)}%)
+                    </div>
+                  )}
+                </div>
               </div>
               <Target className="h-8 w-8 text-green-500" />
             </div>
@@ -185,8 +288,35 @@ const Dashboard = () => {
       )}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Leads Dashboard</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-semibold tracking-tight">Leads Dashboard</h1>
+          {selectedLeads.size > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {selectedLeads.size} selected
+              </span>
+              <button
+                onClick={handleBulkDelete}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete Selected
+              </button>
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-2">
+          {displayLeads.length > 0 && (
+            <div className="flex items-center gap-2 mr-2">
+              <input
+                type="checkbox"
+                checked={selectedLeads.size === displayLeads.length && displayLeads.length > 0}
+                onChange={toggleSelectAll}
+                className="rounded border-gray-300"
+              />
+              <label className="text-sm text-muted-foreground">Select All</label>
+            </div>
+          )}
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <input
@@ -228,42 +358,127 @@ const Dashboard = () => {
         {displayLeads.map((lead) => {
           const category = lead.category || 'cold'
           const CategoryIcon = categoryIcons[category] || categoryIcons.cold
-          const score = lead.ai_score || lead.score || 0
+          const enhancedScore = lead.enhanced_score || lead.score || 0
+          const aiScore = lead.ai_score
           
           return (
             <motion.div
               key={lead.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="group relative rounded-lg border bg-card p-6 hover:shadow-lg transition-shadow"
+              whileHover={{ 
+                scale: 1.02, 
+                y: -4,
+                transition: { duration: 0.2, ease: "easeOut" }
+              }}
+              className="group relative rounded-lg border bg-card p-6 hover:shadow-xl hover:border-primary/30 transition-all duration-200 cursor-pointer"
             >
-              <div className="flex items-start justify-between">
-                <div>
+              {/* Selection checkbox */}
+              <div className="absolute top-3 left-3">
+                <input
+                  type="checkbox"
+                  checked={selectedLeads.has(lead.id)}
+                  onChange={() => toggleSelectLead(lead.id)}
+                  className="rounded border-gray-300"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+              <div className="flex items-start justify-between ml-8">
+                <div className="flex-1">
                   <h3 className="font-semibold">{lead.name}</h3>
                   <p className="text-sm text-muted-foreground">{lead.company || 'No company'}</p>
                 </div>
-                <div
-                  className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium text-white ${
-                    categoryColors[category] || categoryColors.cold
-                  }`}
-                >
-                  <CategoryIcon className="h-3 w-3" />
-                  {category}
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium text-white ${
+                      categoryColors[category] || categoryColors.cold
+                    }`}
+                  >
+                    <CategoryIcon className="h-3 w-3" />
+                    {category}
+                  </div>
+                  
+                  {/* Delete button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeleteLead(lead)
+                    }}
+                    disabled={deletingLeadId === lead.id}
+                    className="opacity-70 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-100 rounded-full text-red-500 hover:text-red-700 disabled:opacity-50"
+                    title="Delete lead"
+                  >
+                    {deletingLeadId === lead.id ? (
+                      <div className="animate-spin h-4 w-4 border-2 border-red-500 border-t-transparent rounded-full" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
               </div>
-              <p className="mt-4 text-sm text-muted-foreground line-clamp-2">
+              <p className="mt-4 ml-8 text-sm text-muted-foreground line-clamp-2">
                 {lead.message || lead.description || 'No description available'}
               </p>
-              <div className="mt-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="text-sm font-medium">Score:</div>
-                  <div className="text-sm font-semibold text-primary">
-                    {score}%
+              
+              {/* Enhanced scoring display */}
+              <div className="mt-4 ml-8 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-medium">Enhanced Score:</div>
+                    <div className="text-sm font-semibold text-primary">
+                      {enhancedScore}%
+                    </div>
+                    {aiScore && aiScore !== enhancedScore && (
+                      <div className="text-xs text-muted-foreground">
+                        (AI: {aiScore}%)
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(lead.created_at || lead.createdAt).toLocaleDateString()}
                   </div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {new Date(lead.created_at || lead.createdAt).toLocaleDateString()}
-                </div>
+                
+                {/* Buying signals and risk factors */}
+                {(lead.buying_signals?.length > 0 || lead.risk_factors?.length > 0) && (
+                  <div className="pt-2 border-t border-border/50">
+                    {lead.buying_signals?.length > 0 && (
+                      <div className="mb-1">
+                        <div className="text-xs font-medium text-green-600 mb-1">Buying Signals:</div>
+                        <div className="flex flex-wrap gap-1">
+                          {lead.buying_signals.slice(0, 3).map((signal, idx) => (
+                            <span key={idx} className="inline-block px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">
+                              {signal}
+                            </span>
+                          ))}
+                          {lead.buying_signals.length > 3 && (
+                            <span className="text-xs text-muted-foreground">
+                              +{lead.buying_signals.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {lead.risk_factors?.length > 0 && (
+                      <div>
+                        <div className="text-xs font-medium text-orange-600 mb-1">Risk Factors:</div>
+                        <div className="flex flex-wrap gap-1">
+                          {lead.risk_factors.slice(0, 2).map((risk, idx) => (
+                            <span key={idx} className="inline-block px-2 py-0.5 text-xs bg-orange-100 text-orange-700 rounded-full">
+                              {risk}
+                            </span>
+                          ))}
+                          {lead.risk_factors.length > 2 && (
+                            <span className="text-xs text-muted-foreground">
+                              +{lead.risk_factors.length - 2} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               
               {/* Status indicator */}
@@ -280,7 +495,8 @@ const Dashboard = () => {
                 </div>
               )}
               
-              <div className="absolute inset-0 rounded-lg ring-1 ring-inset ring-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute inset-0 rounded-lg ring-2 ring-inset ring-primary/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-primary/10 to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity blur-sm pointer-events-none" />
             </motion.div>
           )
         })}
@@ -295,6 +511,126 @@ const Dashboard = () => {
           <p className="mt-2 text-sm text-muted-foreground">
             Try adjusting your search or filter criteria
           </p>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && leadToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-100 rounded-full">
+                <Trash2 className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Delete Lead</h3>
+                <p className="text-sm text-muted-foreground">This action cannot be undone</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-muted-foreground mb-6">
+              Are you sure you want to delete the lead for{' '}
+              <span className="font-semibold text-foreground">
+                {leadToDelete.name}
+              </span>
+              {leadToDelete.company && (
+                <>
+                  {' '}from{' '}
+                  <span className="font-semibold text-foreground">
+                    {leadToDelete.company}
+                  </span>
+                </>
+              )}
+              ?
+            </p>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelDelete}
+                disabled={deletingLeadId === leadToDelete.id}
+                className="px-4 py-2 text-sm border border-input rounded-md hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deletingLeadId === leadToDelete.id}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {deletingLeadId === leadToDelete.id ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" />
+                    Delete Lead
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-100 rounded-full">
+                <Trash2 className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Delete Multiple Leads</h3>
+                <p className="text-sm text-muted-foreground">This action cannot be undone</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-muted-foreground mb-6">
+              Are you sure you want to delete{' '}
+              <span className="font-semibold text-foreground">
+                {selectedLeads.size} lead{selectedLeads.size !== 1 ? 's' : ''}
+              </span>
+              ? This will permanently remove {selectedLeads.size === 1 ? 'this lead' : 'these leads'} from your database.
+            </p>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelBulkDelete}
+                disabled={bulkDeleting}
+                className="px-4 py-2 text-sm border border-input rounded-md hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmBulkDelete}
+                disabled={bulkDeleting}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {bulkDeleting ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                    Deleting {selectedLeads.size} lead{selectedLeads.size !== 1 ? 's' : ''}...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" />
+                    Delete {selectedLeads.size} Lead{selectedLeads.size !== 1 ? 's' : ''}
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
         </div>
       )}
     </div>

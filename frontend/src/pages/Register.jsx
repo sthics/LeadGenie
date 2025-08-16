@@ -83,7 +83,7 @@ const Register = () => {
           className="max-w-md mx-auto"
         >
           <img
-            src="/logo.svg"
+            src="/logoupdated.png"
             alt="LeadGenie"
             className="h-12 w-12 mb-8"
           />
@@ -120,7 +120,7 @@ const Register = () => {
         >
           <div className="text-center">
             <img
-              src="/logo.svg"
+              src="/logoupdated.png"
               alt="LeadGenie"
               className="h-12 w-12 mx-auto mb-4 lg:hidden"
             />

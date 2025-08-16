@@ -69,9 +69,9 @@ const Login = () => {
           className="max-w-md mx-auto"
         >
           <img
-            src="/logo.svg"
+            src="/logoupdated.png"
             alt="LeadGenie"
-            className="h-12 w-12 mb-8"
+            className="h-16 w-16 mb-8"
           />
           <h1 className="text-4xl font-bold mb-4">
             Welcome to LeadGenie
@@ -92,9 +92,9 @@ const Login = () => {
         >
           <div className="text-center">
             <img
-              src="/logo.svg"
+              src="/logoupdated.png"
               alt="LeadGenie"
-              className="h-12 w-12 mx-auto mb-4"
+              className="h-16 w-16 mx-auto mb-4"
             />
             <h2 className="text-2xl font-bold tracking-tight">
               Sign in to your account
