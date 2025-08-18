@@ -24,6 +24,7 @@ hiredis>=2.3.2
 python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
 python-multipart>=0.0.6
+slowapi>=0.1.9
 
 # Monitoring & Logging
 structlog>=23.1.0
@@ -32,6 +33,10 @@ prometheus-client>=0.17.0
 # Environment and config
 python-dotenv>=1.0.0
 email-validator>=2.1.0.post1
+
+# Email Services
+httpx>=0.25.0
+jinja2>=3.1.2
 
 # Production Dependencies
 gunicorn>=21.2.0

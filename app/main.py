@@ -7,9 +7,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 import structlog
 import time
 from typing import Callable
+from slowapi.errors import RateLimitExceeded
 
 from app.core.config import settings
 from app.api.v1.router import api_router
+from app.core.rate_limiter import limiter, rate_limit_handler
 
 # Configure structured logging
 structlog.configure(
@@ -26,6 +28,9 @@ app = FastAPI(
     docs_url=f"{settings.API_V1_STR}/docs",
     redoc_url=f"{settings.API_V1_STR}/redoc",
 )
+
+# Add rate limiter to app state
+app.state.limiter = limiter
 
 # Set up CORS middleware
 if settings.BACKEND_CORS_ORIGINS:
@@ -59,6 +64,11 @@ async def log_requests(request, call_next: Callable):
     )
     
     return response
+
+# Add rate limit error handling
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request, exc):
+    return await rate_limit_handler(request, exc)
 
 # Add error handling
 @app.exception_handler(StarletteHTTPException)

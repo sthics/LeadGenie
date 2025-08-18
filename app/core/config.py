@@ -56,14 +56,14 @@ class Settings(BaseSettings):
     OPENAI_MAX_TOKENS: int = 2000
     OPENAI_TEMPERATURE: float = 0.7
 
-    # Email Settings
-    SMTP_TLS: bool = True
-    SMTP_PORT: Optional[int] = None
-    SMTP_HOST: Optional[str] = None
-    SMTP_USER: Optional[str] = None
-    SMTP_PASSWORD: Optional[str] = None
-    EMAILS_FROM_EMAIL: Optional[EmailStr] = None
-    EMAILS_FROM_NAME: Optional[str] = None
+    # Email Settings (Brevo)
+    EMAIL_FROM_ADDRESS: str = "noreply@leadgenie.com"
+    EMAIL_FROM_NAME: str = "LeadGenie"
+    BREVO_API_KEY: Optional[str] = None  # Required: Get from brevo.com (300 emails/day free)
+    
+    # OTP Settings
+    OTP_EXPIRY_MINUTES: int = 5
+    OTP_MAX_ATTEMPTS: int = 3
 
     # Security Settings
     FIRST_SUPERUSER: EmailStr
