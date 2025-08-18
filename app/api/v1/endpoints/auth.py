@@ -8,14 +8,19 @@ import uuid
 
 from app.core.config import settings
 from app.core.deps import get_db, get_current_user
+from app.core.rate_limiter import limiter, AUTH_RATE_LIMITS
 from app.services import auth as auth_service
+from app.services.otp import OTPService
 from app.schemas.auth import Token, UserCreate, UserResponse, RefreshTokenRequest
+from app.schemas.otp import OTPRequest, OTPVerification, OTPResponse, UserRegistrationWithOTP
 from app.models.user import User, UserRole
 
 router = APIRouter()
 
 @router.post("/login", response_model=Token)
+@limiter.limit(AUTH_RATE_LIMITS["login"])
 async def login(
+    request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
@@ -67,7 +72,9 @@ async def login(
     }
 
 @router.post("/register", response_model=UserResponse)
+@limiter.limit(AUTH_RATE_LIMITS["register"])
 async def register(
+    request: Request,
     *,
     db: AsyncSession = Depends(get_db),
     user_in: UserCreate,
@@ -210,4 +217,127 @@ async def read_users_me(
     """
     Get current user.
     """
-    return current_user 
+    return current_user
+
+@router.post("/send-otp", response_model=OTPResponse)
+@limiter.limit(AUTH_RATE_LIMITS["send_otp"])
+async def send_verification_otp(
+    request: Request,
+    *,
+    db: AsyncSession = Depends(get_db),
+    otp_request: OTPRequest,
+) -> Any:
+    """
+    Send OTP verification email for registration.
+    """
+    # Check if user already exists
+    result = await db.execute(select(User).filter(User.email == otp_request.email))
+    existing_user = result.scalars().first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User with this email already exists.",
+        )
+    
+    # Send OTP
+    success, message = await OTPService.send_verification_otp(
+        db, 
+        otp_request.email, 
+        otp_request.full_name or "User",
+        "registration"
+    )
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=message
+        )
+    
+    return OTPResponse(
+        message=message,
+        email=otp_request.email,
+        expires_in_minutes=settings.OTP_EXPIRY_MINUTES
+    )
+
+@router.post("/verify-otp")
+@limiter.limit(AUTH_RATE_LIMITS["verify_otp"])
+async def verify_otp(
+    request: Request,
+    *,
+    db: AsyncSession = Depends(get_db),
+    otp_verification: OTPVerification,
+) -> Any:
+    """
+    Verify OTP code (doesn't create user yet).
+    """
+    success, message = await OTPService.verify_otp(
+        db,
+        otp_verification.email,
+        otp_verification.otp_code,
+        "registration"
+    )
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=message
+        )
+    
+    return {"message": message, "verified": True}
+
+@router.post("/register-with-otp", response_model=UserResponse)
+@limiter.limit(AUTH_RATE_LIMITS["register"])
+async def register_with_otp(
+    request: Request,
+    *,
+    db: AsyncSession = Depends(get_db),
+    user_in: UserRegistrationWithOTP,
+) -> Any:
+    """
+    Complete user registration after OTP verification.
+    """
+    # Verify OTP first
+    success, message = await OTPService.verify_otp(
+        db,
+        user_in.email,
+        user_in.otp_code,
+        "registration"
+    )
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=message
+        )
+    
+    # Check if user already exists (double-check)
+    result = await db.execute(select(User).filter(User.email == user_in.email))
+    existing_user = result.scalars().first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User with this email already exists.",
+        )
+    
+    # Create user
+    user_id = uuid.uuid4()
+    role_value = user_in.role if isinstance(user_in.role, str) else user_in.role.value
+    
+    await db.execute(text("""
+        INSERT INTO users (id, email, hashed_password, full_name, role, is_active, is_superuser, created_at, updated_at)
+        VALUES (:id, :email, :hashed_password, :full_name, :role, :is_active, :is_superuser, NOW(), NOW())
+    """), {
+        "id": user_id,
+        "email": user_in.email,
+        "hashed_password": auth_service.get_password_hash(user_in.password),
+        "full_name": user_in.full_name,
+        "role": role_value,
+        "is_active": True,
+        "is_superuser": False,
+    })
+    await db.commit()
+    
+    # Fetch the created user
+    result = await db.execute(select(User).filter(User.id == user_id))
+    user = result.scalars().first()
+    return user 
