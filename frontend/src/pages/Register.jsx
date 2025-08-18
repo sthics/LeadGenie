@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 import { Mail, Lock, Eye, EyeOff, User, Building } from 'lucide-react'
 import useAuthStore from '../stores/auth'
+import OTPVerification from '../components/auth/OTPVerification'
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -25,6 +26,10 @@ const Register = () => {
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [step, setStep] = useState('register') // 'register' or 'verify'
+  const [pendingUserData, setPendingUserData] = useState(null)
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
   const { register: registerUser, isLoading, error, isAuthenticated } = useAuthStore()
 
   // Redirect if already authenticated
@@ -49,6 +54,89 @@ const Register = () => {
     },
   })
 
+  // Countdown effect for resend cooldown
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => {
+        setResendCooldown(resendCooldown - 1)
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [resendCooldown])
+
+  const sendOTP = async (email, fullName) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          full_name: fullName
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Failed to send verification code')
+      }
+
+      const data = await response.json()
+      return { success: true, message: data.message }
+    } catch (error) {
+      return { success: false, message: error.message }
+    }
+  }
+
+  const verifyOTP = async (email, otpCode) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/verify-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          otp_code: otpCode
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Invalid verification code')
+      }
+
+      return { success: true }
+    } catch (error) {
+      return { success: false, message: error.message }
+    }
+  }
+
+  const registerWithOTP = async (userData, otpCode) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/register-with-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...userData,
+          otp_code: otpCode
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Registration failed')
+      }
+
+      return { success: true }
+    } catch (error) {
+      return { success: false, message: error.message }
+    }
+  }
+
   const onSubmit = async (data) => {
     if (isLoading) {
       console.log('Registration already in progress, ignoring submission')
@@ -56,20 +144,68 @@ const Register = () => {
     }
     
     try {
-      console.log('Submitting registration form')
-      // Remove confirmPassword from data before sending to API
+      console.log('Starting OTP registration flow')
+      // Remove confirmPassword from data
       const { confirmPassword, ...registrationData } = data
-      const result = await registerUser(registrationData)
       
-      if (result) {
-        toast.success('Registration successful! Please login with your credentials.')
-        navigate('/login')
+      // Send OTP
+      const otpResult = await sendOTP(registrationData.email, registrationData.full_name)
+      
+      if (otpResult.success) {
+        setPendingUserData(registrationData)
+        setStep('verify')
+        setResendCooldown(60) // 60 seconds cooldown
+        toast.success(otpResult.message)
+      } else {
+        toast.error(otpResult.message)
       }
     } catch (error) {
       console.error('Registration submission error:', error)
-      const errorMessage = error.response?.data?.detail || error.message || 'Registration failed'
-      toast.error(errorMessage)
+      toast.error('Failed to start registration process')
     }
+  }
+
+  const handleOTPVerify = async (otpCode) => {
+    setIsVerifying(true)
+    try {
+      // First verify the OTP is correct
+      const verifyResult = await verifyOTP(pendingUserData.email, otpCode)
+      
+      if (verifyResult.success) {
+        // Now complete registration
+        const registerResult = await registerWithOTP(pendingUserData, otpCode)
+        
+        if (registerResult.success) {
+          toast.success('Registration successful! Please login with your credentials.')
+          navigate('/login')
+        } else {
+          toast.error(registerResult.message)
+        }
+      } else {
+        toast.error(verifyResult.message)
+      }
+    } catch (error) {
+      console.error('OTP verification error:', error)
+      toast.error('Verification failed. Please try again.')
+    } finally {
+      setIsVerifying(false)
+    }
+  }
+
+  const handleOTPResend = async () => {
+    const result = await sendOTP(pendingUserData.email, pendingUserData.full_name)
+    if (result.success) {
+      setResendCooldown(60)
+      toast.success('New verification code sent!')
+    } else {
+      toast.error(result.message)
+    }
+  }
+
+  const handleBackToRegistration = () => {
+    setStep('register')
+    setPendingUserData(null)
+    setResendCooldown(0)
   }
 
   return (
@@ -110,8 +246,18 @@ const Register = () => {
         </motion.div>
       </div>
 
-      {/* Right side - Registration form */}
+      {/* Right side - Registration form or OTP verification */}
       <div className="flex items-center justify-center p-8">
+        {step === 'verify' ? (
+          <OTPVerification
+            email={pendingUserData?.email}
+            onVerify={handleOTPVerify}
+            onResend={handleOTPResend}
+            onBack={handleBackToRegistration}
+            isVerifying={isVerifying}
+            resendCooldown={resendCooldown}
+          />
+        ) : (
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -291,6 +437,7 @@ const Register = () => {
             </button>
           </form>
         </motion.div>
+        )}
       </div>
     </div>
   )
