@@ -4,6 +4,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.sessions import SessionMiddleware
 import structlog
 import time
 from typing import Callable
@@ -12,6 +13,8 @@ from slowapi.errors import RateLimitExceeded
 from app.core.config import settings
 from app.api.v1.router import api_router
 from app.core.rate_limiter import limiter, rate_limit_handler
+from app.middleware.security import SecurityHeadersMiddleware
+from app.admin import setup_admin
 
 # Configure structured logging
 structlog.configure(
@@ -31,6 +34,16 @@ app = FastAPI(
 
 # Add rate limiter to app state
 app.state.limiter = limiter
+
+# Add Security Headers Middleware (FIRST - highest priority)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Add session middleware for SQLAdmin authentication
+app.add_middleware(
+    SessionMiddleware, 
+    secret_key=settings.SECRET_KEY,
+    max_age=3600  # 1 hour session
+)
 
 # Set up CORS middleware
 if settings.BACKEND_CORS_ORIGINS:
@@ -102,4 +115,7 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 # Health check endpoint
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"} 
+    return {"status": "healthy"}
+
+# Setup SQLAdmin interface
+setup_admin(app)
