@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, constr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 from enum import Enum
@@ -24,12 +24,12 @@ class RefreshTokenRequest(BaseModel):
 
 class UserLogin(BaseModel):
     email: EmailStr
-    password: constr(min_length=8)
+    password: str = Field(..., min_length=8, max_length=128, description="User password")
 
 class UserCreate(BaseModel):
     email: EmailStr
-    password: constr(min_length=8)
-    full_name: Optional[str] = None
+    password: str = Field(..., min_length=8, max_length=128, description="User password")
+    full_name: Optional[str] = Field(None, min_length=1, max_length=100, description="User's full name")
     role: Optional[UserRole] = UserRole.SALES_REP
 
 class UserResponse(BaseModel):

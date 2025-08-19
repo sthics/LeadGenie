@@ -1,24 +1,24 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 from typing import Optional, List, Any, Dict
 from uuid import UUID
 
 class LeadBase(BaseModel):
-    name: str
+    name: str = Field(..., min_length=1, max_length=100, description="Lead's full name")
     email: EmailStr
-    company: Optional[str] = None
-    message: str
+    company: Optional[str] = Field(None, max_length=100, description="Company name")
+    message: str = Field(..., min_length=10, max_length=2000, description="Lead's message or inquiry")
 
 class LeadCreate(LeadBase):
     pass
 
 class LeadUpdate(BaseModel):
-    name: Optional[str] = None
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
     email: Optional[EmailStr] = None
-    company: Optional[str] = None
-    message: Optional[str] = None
-    category: Optional[str] = None
-    score: Optional[int] = None
+    company: Optional[str] = Field(None, max_length=100)
+    message: Optional[str] = Field(None, min_length=10, max_length=2000)
+    category: Optional[str] = Field(None, max_length=50)
+    score: Optional[int] = Field(None, ge=0, le=100, description="Score between 0-100")
 
 class LeadResponse(LeadBase):
     id: UUID

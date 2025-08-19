@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -19,9 +20,11 @@ class UserUpdate(BaseModel):
     is_superuser: Optional[bool] = None
 
 class UserResponse(UserBase):
-    id: int
+    id: UUID
     created_at: datetime
     updated_at: Optional[datetime] = None
+    full_name: Optional[str] = None
+    role: Optional[str] = None
 
     class Config:
         from_attributes = True 
