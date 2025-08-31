@@ -3,35 +3,108 @@ import { motion } from 'framer-motion'
 import { Search, Filter, ChevronDown, Star, Clock, Snowflake, TrendingUp, Users, Target, Award, Trash2, MoreVertical } from 'lucide-react'
 import { leads } from '../services/api'
 import { toast } from 'react-hot-toast'
+import AIExplanation from '../components/AIExplanation'
+import LeadDetailsModal from '../components/LeadDetailsModal'
 
 // Mock data for demonstration
 const mockLeads = [
   {
     id: 1,
     name: 'John Smith',
+    email: 'john.smith@techcorp.com',
     company: 'TechCorp',
-    description: 'Looking for a custom CRM solution with AI integration.',
+    message: 'Looking for a custom CRM solution with AI integration. We have a budget of $50,000 and need to implement this ASAP as our current system is failing.',
     score: 85,
+    ai_score: 82,
+    enhanced_score: 85,
     category: 'hot',
+    status: 'qualified',
+    source: 'website',
     createdAt: '2024-02-20T10:00:00Z',
+    processed_at: '2024-02-20T10:05:00Z',
+    intent_analysis: {
+      confidence: 0.92,
+      reasoning: "Strong buying signals with immediate need, clear budget authorization, and pain point identified. High urgency indicators suggest ready-to-purchase mindset."
+    },
+    buying_signals: [
+      "Immediate need expressed", 
+      "Budget mentioned ($50,000)", 
+      "Current system failing", 
+      "ASAP timeline",
+      "Decision authority implied"
+    ],
+    risk_factors: [],
+    next_actions: [
+      "Schedule demo within 24 hours",
+      "Prepare custom integration proposal",
+      "Connect with technical decision maker"
+    ]
   },
   {
     id: 2,
     name: 'Sarah Johnson',
+    email: 'sarah@designhub.co',
     company: 'DesignHub',
-    description: 'Need a website redesign with e-commerce functionality.',
+    message: 'Need a website redesign with e-commerce functionality. Our current site is outdated and we are looking to modernize it.',
     score: 65,
+    ai_score: 68,
+    enhanced_score: 65,
     category: 'warm',
+    status: 'processing',
+    source: 'referral',
     createdAt: '2024-02-19T15:30:00Z',
+    processed_at: '2024-02-19T15:35:00Z',
+    intent_analysis: {
+      confidence: 0.75,
+      reasoning: "Moderate buying signals with clear project scope but missing urgency and budget indicators. Good fit for services offered."
+    },
+    buying_signals: [
+      "Specific project requirement",
+      "Current pain point identified",
+      "Modernization need"
+    ],
+    risk_factors: [
+      "No budget mentioned",
+      "No timeline specified"
+    ],
+    next_actions: [
+      "Send portfolio and case studies",
+      "Qualify budget and timeline",
+      "Schedule consultation call"
+    ]
   },
   {
     id: 3,
     name: 'Mike Brown',
+    email: 'mike@startupx.io',
     company: 'StartupX',
-    description: 'Exploring options for cloud migration.',
+    message: 'Exploring options for cloud migration. Just wanted to see what services you offer.',
     score: 45,
+    ai_score: 45,
+    enhanced_score: 45,
     category: 'cold',
+    status: 'new',
+    source: 'google_ads',
     createdAt: '2024-02-18T09:15:00Z',
+    processed_at: '2024-02-18T09:20:00Z',
+    intent_analysis: {
+      confidence: 0.45,
+      reasoning: "Low buying intent with vague inquiry. Appears to be in early research phase without immediate purchase intent or specific requirements."
+    },
+    buying_signals: [
+      "Industry relevance"
+    ],
+    risk_factors: [
+      "Vague inquiry",
+      "Just exploring mindset",
+      "No specific requirements",
+      "No urgency indicated"
+    ],
+    next_actions: [
+      "Send educational content about cloud migration",
+      "Add to nurturing email sequence",
+      "Follow up in 2 weeks with case study"
+    ]
   },
 ]
 
@@ -61,6 +134,8 @@ const Dashboard = () => {
   const [selectedLeads, setSelectedLeads] = useState(new Set())
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false)
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [selectedLead, setSelectedLead] = useState(null)
+  const [showLeadDetails, setShowLeadDetails] = useState(false)
 
   // Define displayLeads early to avoid reference errors
   const displayLeads = leadsData.leads.length > 0 ? leadsData.leads : mockLeads
@@ -204,6 +279,16 @@ const Dashboard = () => {
 
   const cancelBulkDelete = () => {
     setShowBulkDeleteModal(false)
+  }
+
+  const handleLeadClick = (lead) => {
+    setSelectedLead(lead)
+    setShowLeadDetails(true)
+  }
+
+  const closeLeadDetails = () => {
+    setShowLeadDetails(false)
+    setSelectedLead(null)
   }
 
   if (loading && !displayLeads.length) {
@@ -371,6 +456,7 @@ const Dashboard = () => {
                 y: -4,
                 transition: { duration: 0.2, ease: "easeOut" }
               }}
+              onClick={() => handleLeadClick(lead)}
               className="group relative rounded-lg border bg-card p-6 hover:shadow-xl hover:border-primary/30 transition-all duration-200 cursor-pointer"
             >
               {/* Selection checkbox */}
@@ -420,9 +506,9 @@ const Dashboard = () => {
                 {lead.message || lead.description || 'No description available'}
               </p>
               
-              {/* Enhanced scoring display */}
-              <div className="mt-4 ml-8 space-y-2">
-                <div className="flex items-center justify-between">
+              {/* Enhanced AI Explanation */}
+              <div className="mt-4 ml-8">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="text-sm font-medium">Enhanced Score:</div>
                     <div className="text-sm font-semibold text-primary">
@@ -439,46 +525,12 @@ const Dashboard = () => {
                   </div>
                 </div>
                 
-                {/* Buying signals and risk factors */}
-                {(lead.buying_signals?.length > 0 || lead.risk_factors?.length > 0) && (
-                  <div className="pt-2 border-t border-border/50">
-                    {lead.buying_signals?.length > 0 && (
-                      <div className="mb-1">
-                        <div className="text-xs font-medium text-green-600 mb-1">Buying Signals:</div>
-                        <div className="flex flex-wrap gap-1">
-                          {lead.buying_signals.slice(0, 3).map((signal, idx) => (
-                            <span key={idx} className="inline-block px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">
-                              {signal}
-                            </span>
-                          ))}
-                          {lead.buying_signals.length > 3 && (
-                            <span className="text-xs text-muted-foreground">
-                              +{lead.buying_signals.length - 3} more
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {lead.risk_factors?.length > 0 && (
-                      <div>
-                        <div className="text-xs font-medium text-orange-600 mb-1">Risk Factors:</div>
-                        <div className="flex flex-wrap gap-1">
-                          {lead.risk_factors.slice(0, 2).map((risk, idx) => (
-                            <span key={idx} className="inline-block px-2 py-0.5 text-xs bg-orange-100 text-orange-700 rounded-full">
-                              {risk}
-                            </span>
-                          ))}
-                          {lead.risk_factors.length > 2 && (
-                            <span className="text-xs text-muted-foreground">
-                              +{lead.risk_factors.length - 2} more
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                <AIExplanation 
+                  lead={lead}
+                  compact={true}
+                  showConfidenceBar={true}
+                  className="border border-blue-100 rounded-lg p-3 bg-blue-50/30"
+                />
               </div>
               
               {/* Status indicator */}
@@ -633,6 +685,13 @@ const Dashboard = () => {
           </motion.div>
         </div>
       )}
+
+      {/* Lead Details Modal */}
+      <LeadDetailsModal 
+        lead={selectedLead}
+        isOpen={showLeadDetails}
+        onClose={closeLeadDetails}
+      />
     </div>
   )
 }

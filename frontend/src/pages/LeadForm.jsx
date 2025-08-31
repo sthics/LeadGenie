@@ -328,7 +328,7 @@ const LeadForm = () => {
             <button
               type="button"
               onClick={nextStep}
-              className="ml-auto inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              className="ml-auto inline-flex items-center rounded-md bg-brand-purple px-4 py-2 text-sm font-medium text-white hover:bg-brand-purple-dark transition-colors"
             >
               Next
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -338,13 +338,13 @@ const LeadForm = () => {
               type="button"
               onClick={() => handleSubmit(onSubmit)()}
               disabled={isSubmitting || !isValid}
-              className="ml-auto inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              className="ml-auto inline-flex items-center rounded-md bg-brand-purple px-4 py-2 text-sm font-medium text-white hover:bg-brand-purple-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 'Submitting...'
               ) : (
                 <>
-                  Submit
+                  Submit Lead
                   <Check className="ml-2 h-4 w-4" />
                 </>
               )}
