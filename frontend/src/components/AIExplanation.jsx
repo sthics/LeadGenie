@@ -32,12 +32,12 @@ const ConfidenceBar = ({ confidence, className = "" }) => {
   return (
     <div className={`space-y-2 ${className}`}>
       <div className="flex items-center justify-between text-sm">
-        <span className="font-medium text-muted-foreground">AI Confidence</span>
-        <span className="font-semibold">
+        <span className="font-medium text-gray-600 dark:text-gray-300">AI Confidence</span>
+        <span className="font-semibold text-gray-900 dark:text-gray-100">
           {getConfidenceLabel(confidence)} ({percentage}%)
         </span>
       </div>
-      <div className="w-full bg-gray-200 rounded-full h-2">
+      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
         <motion.div 
           className={`h-2 rounded-full ${getConfidenceColor(confidence)}`}
           initial={{ width: 0 }}
@@ -45,7 +45,7 @@ const ConfidenceBar = ({ confidence, className = "" }) => {
           transition={{ duration: 0.6, ease: "easeOut" }}
         />
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-gray-500 dark:text-gray-400">
         {confidence >= 0.8 
           ? "High confidence in AI assessment"
           : confidence >= 0.6

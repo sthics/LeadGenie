@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Search, Filter, ChevronDown, Star, Clock, Snowflake, TrendingUp, Users, Target, Award, Trash2, MoreVertical } from 'lucide-react'
+import { Search, Filter, ChevronDown, Star, Clock, Snowflake, TrendingUp, Users, Target, Award, Trash2, MoreVertical, CheckCircle, ThermometerSun, Activity, Mail, UserPlus, XCircle } from 'lucide-react'
 import { leads } from '../services/api'
 import { toast } from 'react-hot-toast'
 import AIExplanation from '../components/AIExplanation'
@@ -123,6 +123,7 @@ const categoryIcons = {
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
+  const [activeKpiFilter, setActiveKpiFilter] = useState(null)
   const [sortBy, setSortBy] = useState('score')
   const [leadsData, setLeadsData] = useState({ leads: [], total: 0, page: 1, per_page: 10, total_pages: 0 })
   const [stats, setStats] = useState(null)
@@ -136,6 +137,13 @@ const Dashboard = () => {
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [selectedLead, setSelectedLead] = useState(null)
   const [showLeadDetails, setShowLeadDetails] = useState(false)
+  const [showAdvancedFilter, setShowAdvancedFilter] = useState(false)
+  const [advancedFilters, setAdvancedFilters] = useState({
+    scoreRange: [0, 100],
+    dateRange: { start: '', end: '' },
+    status: [],
+    source: []
+  })
 
   // Define displayLeads early to avoid reference errors
   const displayLeads = leadsData.leads.length > 0 ? leadsData.leads : mockLeads
@@ -301,37 +309,63 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Stats Overview */}
+      {/* Interactive KPIs */}
       {stats && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <motion.div
+          <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-lg border bg-card p-6"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              setActiveKpiFilter(activeKpiFilter === 'total' ? null : 'total')
+              setSelectedCategory('all')
+            }}
+            className={`rounded-lg border p-6 text-left transition-all duration-200 hover:shadow-lg ${
+              activeKpiFilter === 'total' 
+                ? 'border-blue-500 bg-blue-50 shadow-md' 
+                : 'bg-card hover:border-blue-200'
+            }`}
           >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Leads</p>
-                <p className="text-2xl font-bold">{stats.total_leads}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-3xl font-bold">{stats.total_leads}</p>
+                  <Activity className="h-4 w-4 text-blue-500" />
+                </div>
               </div>
-              <Users className="h-8 w-8 text-blue-500" />
+              <Users className="h-10 w-10 text-blue-500" />
             </div>
-          </motion.div>
+          </motion.button>
           
-          <motion.div
+          <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="rounded-lg border bg-card p-6"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              setActiveKpiFilter(activeKpiFilter === 'hot' ? null : 'hot')
+              setSelectedCategory(activeKpiFilter === 'hot' ? 'all' : 'hot')
+            }}
+            className={`rounded-lg border p-6 text-left transition-all duration-200 hover:shadow-lg ${
+              activeKpiFilter === 'hot' 
+                ? 'border-red-500 bg-red-50 shadow-md' 
+                : 'bg-card hover:border-red-200'
+            }`}
           >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Hot Leads</p>
-                <p className="text-2xl font-bold text-red-500">{stats.hot_leads}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-3xl font-bold text-red-600">{stats.hot_leads}</p>
+                  <ThermometerSun className="h-4 w-4 text-red-500" />
+                </div>
               </div>
-              <Star className="h-8 w-8 text-red-500" />
+              <Star className="h-10 w-10 text-red-500" />
             </div>
-          </motion.div>
+          </motion.button>
           
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -341,52 +375,105 @@ const Dashboard = () => {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Avg Score</p>
-                <div className="flex items-center gap-2">
-                  <p className="text-2xl font-bold text-green-500">{Math.round(stats.avg_enhanced_score || stats.avg_score)}%</p>
-                  {stats.avg_enhanced_score && stats.avg_enhanced_score !== stats.avg_score && (
-                    <div className="text-xs text-muted-foreground">
-                      (AI: {Math.round(stats.avg_score)}%)
+                <p className="text-sm font-medium text-muted-foreground">Average Lead Score</p>
+                <div className="flex items-center gap-3">
+                  <p className="text-3xl font-bold text-green-600">{Math.round(stats.avg_enhanced_score || stats.avg_score)}%</p>
+                  <div className="flex flex-col">
+                    <div className="w-12 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-green-500 transition-all duration-500"
+                        style={{ width: `${Math.round(stats.avg_enhanced_score || stats.avg_score)}%` }}
+                      />
                     </div>
-                  )}
+                    {stats.avg_enhanced_score && stats.avg_enhanced_score !== stats.avg_score && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        AI: {Math.round(stats.avg_score)}%
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-              <Target className="h-8 w-8 text-green-500" />
+              <Target className="h-10 w-10 text-green-500" />
             </div>
           </motion.div>
           
-          <motion.div
+          <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="rounded-lg border bg-card p-6"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              setActiveKpiFilter(activeKpiFilter === 'qualified' ? null : 'qualified')
+              // Filter by qualified status when implemented
+            }}
+            className={`rounded-lg border p-6 text-left transition-all duration-200 hover:shadow-lg ${
+              activeKpiFilter === 'qualified' 
+                ? 'border-purple-500 bg-purple-50 shadow-md' 
+                : 'bg-card hover:border-purple-200'
+            }`}
           >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Qualified</p>
-                <p className="text-2xl font-bold text-purple-500">{stats.qualified_leads}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-3xl font-bold text-purple-600">{stats.qualified_leads}</p>
+                  <CheckCircle className="h-4 w-4 text-purple-500" />
+                </div>
               </div>
-              <Award className="h-8 w-8 text-purple-500" />
+              <Award className="h-10 w-10 text-purple-500" />
             </div>
-          </motion.div>
+          </motion.button>
         </div>
       )}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Leads Dashboard</h1>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Leads Dashboard</h1>
+            {activeKpiFilter && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Filtered by: <span className="font-medium capitalize">{activeKpiFilter === 'total' ? 'All leads' : activeKpiFilter + ' leads'}</span>
+                <button 
+                  onClick={() => {
+                    setActiveKpiFilter(null)
+                    setSelectedCategory('all')
+                  }}
+                  className="ml-2 text-primary hover:text-primary/80 underline"
+                >
+                  Clear filter
+                </button>
+              </p>
+            )}
+          </div>
           {selectedLeads.size > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">
                 {selectedLeads.size} selected
               </span>
-              <button
-                onClick={handleBulkDelete}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete Selected
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => toast.success('Bulk assign feature coming soon!')}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Assign
+                </button>
+                <button
+                  onClick={() => toast.success('Bulk status update coming soon!')}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  Mark Qualified
+                </button>
+                <button
+                  onClick={handleBulkDelete}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -436,10 +523,17 @@ const Dashboard = () => {
             </select>
             <ChevronDown className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           </div>
+          <button
+            onClick={() => setShowAdvancedFilter(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm border border-input bg-background rounded-md hover:bg-muted transition-colors"
+          >
+            <Filter className="h-4 w-4" />
+            Advanced Filter
+          </button>
         </div>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {displayLeads.map((lead) => {
           const category = lead.category || 'cold'
           const CategoryIcon = categoryIcons[category] || categoryIcons.cold
@@ -471,17 +565,17 @@ const Dashboard = () => {
               </div>
               <div className="flex items-start justify-between ml-8">
                 <div className="flex-1">
-                  <h3 className="font-semibold">{lead.name}</h3>
-                  <p className="text-sm text-muted-foreground">{lead.company || 'No company'}</p>
+                  <h3 className="font-semibold text-lg">{lead.name}</h3>
+                  <p className="text-sm text-muted-foreground font-medium">{lead.company || 'No company'}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <div
-                    className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium text-white ${
+                    className={`flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-white shadow-sm ${
                       categoryColors[category] || categoryColors.cold
-                    }`}
+                    } ${category === 'hot' ? 'animate-pulse' : ''}`}
                   >
-                    <CategoryIcon className="h-3 w-3" />
-                    {category}
+                    <CategoryIcon className="h-4 w-4" />
+                    {category.toUpperCase()}
                   </div>
                   
                   {/* Delete button */}
@@ -506,19 +600,25 @@ const Dashboard = () => {
                 {lead.message || lead.description || 'No description available'}
               </p>
               
-              {/* Enhanced AI Explanation */}
+              {/* Consolidated AI Score */}
               <div className="mt-4 ml-8">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="text-sm font-medium">Enhanced Score:</div>
-                    <div className="text-sm font-semibold text-primary">
-                      {enhancedScore}%
-                    </div>
-                    {aiScore && aiScore !== enhancedScore && (
-                      <div className="text-xs text-muted-foreground">
-                        (AI: {aiScore}%)
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm font-medium">AI Score:</div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-lg font-bold text-primary">
+                        {enhancedScore}%
                       </div>
-                    )}
+                      <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-500 ${
+                            enhancedScore >= 80 ? 'bg-green-500' : 
+                            enhancedScore >= 50 ? 'bg-orange-500' : 'bg-red-500'
+                          }`}
+                          style={{ width: `${enhancedScore}%` }}
+                        />
+                      </div>
+                    </div>
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {new Date(lead.created_at || lead.createdAt).toLocaleDateString()}
@@ -533,16 +633,53 @@ const Dashboard = () => {
                 />
               </div>
               
-              {/* Status indicator */}
+              {/* Hover Action Buttons */}
+              <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      window.location.href = `mailto:${lead.email}?subject=Following up on your inquiry`
+                    }}
+                    className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-full transition-colors duration-200"
+                    title="Contact Lead"
+                  >
+                    <Mail className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toast.success('Assign feature coming soon!')
+                    }}
+                    className="p-2 bg-green-100 hover:bg-green-200 text-green-600 rounded-full transition-colors duration-200"
+                    title="Assign Lead"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toast.success('Disqualify feature coming soon!')
+                    }}
+                    className="p-2 bg-orange-100 hover:bg-orange-200 text-orange-600 rounded-full transition-colors duration-200"
+                    title="Disqualify Lead"
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              
+              {/* Status indicator - Outlined style */}
               {lead.status && (
-                <div className="mt-2">
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    lead.status === 'qualified' ? 'bg-green-100 text-green-800' :
-                    lead.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
-                    lead.status === 'failed' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
+                <div className="mt-2 ml-8">
+                  <span className={`inline-flex items-center px-2 py-1 rounded-md border text-xs font-medium ${
+                    lead.status === 'qualified' ? 'border-green-300 text-green-700 bg-green-50' :
+                    lead.status === 'processing' ? 'border-yellow-300 text-yellow-700 bg-yellow-50' :
+                    lead.status === 'failed' ? 'border-red-300 text-red-700 bg-red-50' :
+                    lead.status === 'new' ? 'border-blue-300 text-blue-700 bg-blue-50' :
+                    'border-gray-300 text-gray-700 bg-gray-50'
                   }`}>
-                    {lead.status}
+                    {lead.status.toUpperCase()}
                   </span>
                 </div>
               )}
@@ -692,6 +829,168 @@ const Dashboard = () => {
         isOpen={showLeadDetails}
         onClose={closeLeadDetails}
       />
+
+      {/* Advanced Filter Modal */}
+      {showAdvancedFilter && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold">Advanced Filters</h3>
+              <button
+                onClick={() => setShowAdvancedFilter(false)}
+                className="p-1 hover:bg-gray-100 rounded-full"
+              >
+                <XCircle className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Score Range */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Score Range</label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={advancedFilters.scoreRange[0]}
+                    onChange={(e) => setAdvancedFilters(prev => ({
+                      ...prev,
+                      scoreRange: [parseInt(e.target.value), prev.scoreRange[1]]
+                    }))}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-medium w-12">{advancedFilters.scoreRange[0]}%</span>
+                </div>
+                <div className="flex items-center gap-3 mt-2">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={advancedFilters.scoreRange[1]}
+                    onChange={(e) => setAdvancedFilters(prev => ({
+                      ...prev,
+                      scoreRange: [prev.scoreRange[0], parseInt(e.target.value)]
+                    }))}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-medium w-12">{advancedFilters.scoreRange[1]}%</span>
+                </div>
+              </div>
+
+              {/* Date Range */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Date Range</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">From</label>
+                    <input
+                      type="date"
+                      value={advancedFilters.dateRange.start}
+                      onChange={(e) => setAdvancedFilters(prev => ({
+                        ...prev,
+                        dateRange: { ...prev.dateRange, start: e.target.value }
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">To</label>
+                    <input
+                      type="date"
+                      value={advancedFilters.dateRange.end}
+                      onChange={(e) => setAdvancedFilters(prev => ({
+                        ...prev,
+                        dateRange: { ...prev.dateRange, end: e.target.value }
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Filter */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Status</label>
+                <div className="space-y-2">
+                  {['new', 'processing', 'qualified', 'failed'].map(status => (
+                    <label key={status} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={advancedFilters.status.includes(status)}
+                        onChange={(e) => {
+                          setAdvancedFilters(prev => ({
+                            ...prev,
+                            status: e.target.checked
+                              ? [...prev.status, status]
+                              : prev.status.filter(s => s !== status)
+                          }))
+                        }}
+                        className="mr-2"
+                      />
+                      <span className="text-sm capitalize">{status}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Source Filter */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Source</label>
+                <div className="space-y-2">
+                  {['website', 'referral', 'google_ads', 'social_media'].map(source => (
+                    <label key={source} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={advancedFilters.source.includes(source)}
+                        onChange={(e) => {
+                          setAdvancedFilters(prev => ({
+                            ...prev,
+                            source: e.target.checked
+                              ? [...prev.source, source]
+                              : prev.source.filter(s => s !== source)
+                          }))
+                        }}
+                        className="mr-2"
+                      />
+                      <span className="text-sm capitalize">{source.replace('_', ' ')}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end mt-6">
+              <button
+                onClick={() => {
+                  setAdvancedFilters({
+                    scoreRange: [0, 100],
+                    dateRange: { start: '', end: '' },
+                    status: [],
+                    source: []
+                  })
+                }}
+                className="px-4 py-2 text-sm border border-input rounded-md hover:bg-muted"
+              >
+                Clear All
+              </button>
+              <button
+                onClick={() => {
+                  toast.success('Advanced filters applied!')
+                  setShowAdvancedFilter(false)
+                }}
+                className="px-4 py-2 text-sm bg-primary text-white rounded-md hover:bg-primary/90"
+              >
+                Apply Filters
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }
