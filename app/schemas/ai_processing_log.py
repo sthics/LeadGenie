@@ -6,10 +6,10 @@ from datetime import datetime
 class AIProcessingLogBase(BaseModel):
     lead_id: uuid.UUID
     model_used: str
-    tokens_used: int
-    processing_time: float
-    cost: float
-    success: bool
+    prompt_used: str | None = None
+    response_received: str | None = None
+    processing_time: float | None = None
+    success: bool | None = None
     error_message: str | None = None
 
 class AIProcessingLogCreate(AIProcessingLogBase):

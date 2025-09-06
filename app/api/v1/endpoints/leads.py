@@ -6,7 +6,7 @@ from typing import List, Optional
 import structlog
 from uuid import UUID
 
-from app.core.database import get_db
+from app.core.database import get_db, async_session_factory
 from app.core.deps import get_current_user
 from app.services.ai import LeadQualificationAI
 from app.models.lead import Lead, LeadStatus
@@ -44,8 +44,7 @@ async def qualify_lead(
         background_tasks.add_task(
             process_lead_qualification,
             db_lead.id,
-            lead.dict(),
-            db
+            lead.dict()
         )
 
         return db_lead
@@ -56,60 +55,60 @@ async def qualify_lead(
 
 async def process_lead_qualification(
     lead_id: str,
-    lead_data: dict,
-    db: AsyncSession
+    lead_data: dict
 ):
     """
     Background task for lead qualification.
     """
-    try:
-        ai_service = LeadQualificationAI(db)
-        # Get AI qualification
-        lead_data["id"] = lead_id
-        qualification = await ai_service.qualify_lead(lead_data)
+    async with async_session_factory() as db:
+        try:
+            ai_service = LeadQualificationAI(db)
+            # Get AI qualification
+            lead_data["id"] = lead_id
+            qualification = await ai_service.qualify_lead(lead_data)
 
-        # Update lead record with enhanced data
-        lead_record = await db.get(Lead, lead_id)
-        if lead_record:
-            # Store both AI and enhanced scores
-            lead_record.ai_score = qualification.get("score")
-            lead_record.enhanced_score = qualification.get("enhanced_score", qualification.get("score"))
-            lead_record.score = qualification.get("enhanced_score", qualification.get("score"))  # Use enhanced as primary
-            lead_record.category = qualification.get("category").lower() if qualification.get("category") else "cold"
-            
-            # Store detailed analysis
-            lead_record.intent_analysis = {
-                "confidence": qualification.get("confidence"),
-                "reasoning": qualification.get("reasoning")
-            }
-            lead_record.buying_signals = qualification.get("buying_signals", [])
-            lead_record.risk_factors = qualification.get("risk_factors", [])
-            lead_record.next_actions = qualification.get("next_actions", [])
-            lead_record.scoring_breakdown = qualification.get("scoring_breakdown")
-            lead_record.status = LeadStatus.QUALIFIED.value
+            # Update lead record with enhanced data
+            lead_record = await db.get(Lead, lead_id)
+            if lead_record:
+                # Store both AI and enhanced scores
+                lead_record.ai_score = qualification.get("score")
+                lead_record.enhanced_score = qualification.get("enhanced_score", qualification.get("score"))
+                lead_record.score = qualification.get("enhanced_score", qualification.get("score"))  # Use enhanced as primary
+                lead_record.category = qualification.get("category").lower() if qualification.get("category") else "cold"
+                
+                # Store detailed analysis
+                lead_record.intent_analysis = {
+                    "confidence": qualification.get("confidence"),
+                    "reasoning": qualification.get("reasoning")
+                }
+                lead_record.buying_signals = qualification.get("buying_signals", [])
+                lead_record.risk_factors = qualification.get("risk_factors", [])
+                lead_record.next_actions = qualification.get("next_actions", [])
+                lead_record.scoring_breakdown = qualification.get("scoring_breakdown")
+                lead_record.status = LeadStatus.QUALIFIED.value
 
-            await db.commit()
+                await db.commit()
 
-            logger.info(
-                "lead_qualified",
+                logger.info(
+                    "lead_qualified",
+                    lead_id=lead_id,
+                    ai_score=qualification.get("score"),
+                    enhanced_score=qualification.get("enhanced_score"),
+                    category=qualification.get("category")
+                )
+
+        except Exception as e:
+            logger.error(
+                "lead_qualification_background_failed",
                 lead_id=lead_id,
-                ai_score=qualification.get("score"),
-                enhanced_score=qualification.get("enhanced_score"),
-                category=qualification.get("category")
+                error=str(e)
             )
 
-    except Exception as e:
-        logger.error(
-            "lead_qualification_background_failed",
-            lead_id=lead_id,
-            error=str(e)
-        )
-
-        # Update lead status to failed
-        lead_record = await db.get(Lead, lead_id)
-        if lead_record:
-            lead_record.status = LeadStatus.FAILED.value
-            await db.commit()
+            # Update lead status to failed
+            lead_record = await db.get(Lead, lead_id)
+            if lead_record:
+                lead_record.status = LeadStatus.FAILED.value
+                await db.commit()
 
 
 @router.get("/", response_model=LeadList)

@@ -2,7 +2,7 @@
 import httpx
 import json
 import time
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.crud import crud_ai_processing_log
@@ -37,7 +37,7 @@ class FreeAPIService:
                     "Content-Type": "application/json",
                 },
                 json={
-                    "model": "llama3-8b-8192",
+                    "model": "llama-3.1-8b-instant",
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": 0.1,
                     "max_tokens": 2000,
@@ -51,7 +51,7 @@ class FreeAPIService:
             return response_json
 
 class LeadQualificationAI:
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.api_service = FreeAPIService()
         self.validator = ResponseValidator()
         self.fallback_handler = FallbackHandler()
@@ -81,12 +81,12 @@ class LeadQualificationAI:
                 response_data['category'] = enhanced_category
                 response_data['scoring_breakdown'] = scoring_breakdown
                 
-                crud_ai_processing_log.create_ai_processing_log(db=self.db, obj_in=log_entry)
+                await crud_ai_processing_log.create_ai_processing_log(db=self.db, obj_in=log_entry)
                 return response_data
             else:
                 log_entry.success = False
                 log_entry.error_message = "Invalid AI response format"
-                crud_ai_processing_log.create_ai_processing_log(db=self.db, obj_in=log_entry)
+                await crud_ai_processing_log.create_ai_processing_log(db=self.db, obj_in=log_entry)
                 return self.fallback_handler.rule_based_qualify(lead_data)
         except Exception as e:
             log_entry.success = False
@@ -95,15 +95,22 @@ class LeadQualificationAI:
             return self.fallback_handler.rule_based_qualify(lead_data)
 
     def _prepare_log_entry(self, lead_data: dict, ai_response: dict, response_content: str) -> AIProcessingLogCreate:
-        tokens_used = ai_response.get("usage", {})
-        model_used = ai_response.get("model", "llama3-8b-8192")
-        cost = self.cost_tracker.calculate_cost(tokens_used, model_used)
+        # Prepare the prompt that was sent to the AI  
+        from .prompt_templates import LEAD_QUALIFICATION_PROMPT
+        prompt = LEAD_QUALIFICATION_PROMPT.format(
+            name=lead_data.get("name"),
+            company=lead_data.get("company"),
+            email=lead_data.get("email"),
+            description=lead_data.get("message"),
+            budget=lead_data.get("budget"),
+            timeline=lead_data.get("timeline"),
+        )
 
         return AIProcessingLogCreate(
             lead_id=lead_data.get("id"),
             model_used=ai_response.get("model"),
-            tokens_used=tokens_used.get("total_tokens"),
+            prompt_used=prompt,
+            response_received=response_content,
             processing_time=ai_response.get("processing_time"),
-            cost=cost,
             success=True,
         )
